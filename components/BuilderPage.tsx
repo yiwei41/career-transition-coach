@@ -24,7 +24,8 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
     'Operations / Project coordination',
     'Engineering / Technical role',
     'Consulting / Business role',
-    'Other or mixed background'
+    'Mixed background',
+    'Others'
   ];
 
   const directions = [
