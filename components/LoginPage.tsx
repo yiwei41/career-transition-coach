@@ -1,20 +1,45 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { User } from '../types';
 
 interface LoginPageProps {
-  onLogin: () => void;
+  onLogin: (user: User) => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-  const [loading, setLoading] = useState(false);
+// Decode JWT token to get user info
+const decodeJwt = (token: string): { name: string; email: string; picture: string } | null => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+};
 
-  const handleLogin = () => {
-    setLoading(true);
-    // Simulate Google OAuth transition
-    setTimeout(() => {
-      onLogin();
-      setLoading(false);
-    }, 1200);
+export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+  const handleSuccess = (credentialResponse: CredentialResponse) => {
+    if (credentialResponse.credential) {
+      const decoded = decodeJwt(credentialResponse.credential);
+      if (decoded) {
+        onLogin({
+          name: decoded.name,
+          email: decoded.email,
+          avatar: decoded.picture
+        });
+      }
+    }
+  };
+
+  const handleError = () => {
+    console.error('Google Login Failed');
   };
 
   return (
@@ -32,23 +57,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         <p className="text-gray-500 mb-10 text-lg">Your co-analyst for the next chapter of your career.</p>
 
         <div className="space-y-4">
-          <button
-            onClick={handleLogin}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-4 bg-white border border-gray-200 rounded-2xl font-bold text-gray-700 hover:bg-gray-50 hover:shadow-lg hover:border-gray-300 transition-all active:scale-[0.98] disabled:opacity-50"
-          >
-            {loading ? (
-              <i className="fas fa-spinner fa-spin text-indigo-500"></i>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 18 18">
-                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" />
-                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" />
-                <path fill="#FBBC05" d="M3.964 10.711c-.18-.54-.282-1.117-.282-1.711s.102-1.171.282-1.711V4.957H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.043l3.007-2.332z" />
-                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.443 2.043.957 4.957L3.964 7.29c.708-2.127 2.692-3.71 5.036-3.71z" />
-              </svg>
-            )}
-            {loading ? "Signing in..." : "Continue with Google"}
-          </button>
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleSuccess}
+              onError={handleError}
+              theme="outline"
+              size="large"
+              shape="rectangular"
+              text="continue_with"
+              width="320"
+            />
+          </div>
           
           <p className="text-[11px] text-gray-400 px-4">
             By continuing, you agree to Coach.ai's <span className="underline cursor-pointer">Terms of Service</span> and <span className="underline cursor-pointer">Privacy Policy</span>.
