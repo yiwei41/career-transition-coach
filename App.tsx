@@ -9,9 +9,14 @@ import { ResumePage } from './components/ResumePage';
 import { ResumeFormPage } from './components/ResumeFormPage';
 import { ExitPage } from './components/ExitPage';
 import { LoginPage } from './components/LoginPage';
+import { supabase } from './supabaseClient';
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
+  // Load user from localStorage on initial render
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('coach_user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [currentPage, setCurrentPage] = useState<Page>('builder');
   
   // 1. 核心输入上下文
@@ -34,12 +39,34 @@ const App: React.FC = () => {
 
   const [exitType, setExitType] = useState<'not_for_me' | 'unsure' | null>(null);
 
-  const handleLogin = (loggedInUser: User) => {
+  const handleLogin = async (loggedInUser: User) => {
     setUser(loggedInUser);
+    localStorage.setItem('coach_user', JSON.stringify(loggedInUser));
+    
+    // Save/update user in Supabase
+    try {
+      const { error } = await supabase
+        .from('bgcc_users')
+        .upsert({
+          email: loggedInUser.email,
+          name: loggedInUser.name,
+          avatar: loggedInUser.avatar,
+          last_login: new Date().toISOString()
+        }, { onConflict: 'email' });
+      
+      if (error) {
+        console.error('Error saving user to Supabase:', error);
+      } else {
+        console.log('User saved to Supabase successfully');
+      }
+    } catch (err) {
+      console.error('Supabase error:', err);
+    }
   };
 
   const handleLogout = () => {
     setUser(null);
+    localStorage.removeItem('coach_user');
     handleReset();
   };
 
