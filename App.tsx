@@ -1,23 +1,59 @@
 
 import React, { useState } from 'react';
-import { Page, UserContext, AIPreview, RoleCard, SkillMapping } from './types';
+import { Page, UserContext, AIPreview, RoleCard, SkillMapping, User, DecisionSupport, ResumeDraft, UserExperienceInput } from './types';
 import { BuilderPage } from './components/BuilderPage';
 import { ExplorationPage } from './components/ExplorationPage';
 import { ValidationPage } from './components/ValidationPage';
 import { DecisionPage } from './components/DecisionPage';
+import { ResumePage } from './components/ResumePage';
+import { ResumeFormPage } from './components/ResumeFormPage';
 import { ExitPage } from './components/ExitPage';
+import { LoginPage } from './components/LoginPage';
 
 const App: React.FC = () => {
+  const [user, setUser] = useState<User | null>(null);
   const [currentPage, setCurrentPage] = useState<Page>('builder');
+  
+  // 1. 核心输入上下文
   const [userContext, setUserContext] = useState<UserContext | null>(null);
   const [aiPreview, setAiPreview] = useState<AIPreview | null>(null);
+
+  // 2. 角色探索阶段缓存
+  const [cachedRoles, setCachedRoles] = useState<RoleCard[] | null>(null);
   const [selectedRole, setSelectedRole] = useState<RoleCard | null>(null);
-  const [validatedSkills, setValidatedSkills] = useState<SkillMapping[]>([]);
+
+  // 3. 验证阶段缓存 (Key 为 role.id，支持切换角色保留各自进度)
+  const [cachedSkillsMap, setCachedSkillsMap] = useState<Record<string, SkillMapping[]>>({});
+  
+  // 4. 简历表单数据
+  const [userExperienceInput, setUserExperienceInput] = useState<UserExperienceInput | undefined>(undefined);
+
+  // 5. 决策与简历阶段缓存 (Key 为 role.id)
+  const [cachedDecisionMap, setCachedDecisionMap] = useState<Record<string, DecisionSupport>>({});
+  const [cachedResumeMap, setCachedResumeMap] = useState<Record<string, ResumeDraft>>({});
+
   const [exitType, setExitType] = useState<'not_for_me' | 'unsure' | null>(null);
+
+  const handleLogin = () => {
+    setUser({
+      name: "Alex Johnson",
+      email: "alex.j@gmail.com",
+      avatar: "https://ui-avatars.com/api/?name=Alex+Johnson&background=4f46e5&color=fff"
+    });
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    handleReset();
+  };
 
   const handleBuilderComplete = (context: UserContext, preview: AIPreview) => {
     setUserContext(context);
     setAiPreview(preview);
+    setCachedRoles(null);
+    setCachedSkillsMap({});
+    setCachedDecisionMap({});
+    setCachedResumeMap({});
     setCurrentPage('exploration');
   };
 
@@ -26,9 +62,29 @@ const App: React.FC = () => {
     setCurrentPage('validation');
   };
 
-  const handleValidationComplete = (skills: SkillMapping[]) => {
-    setValidatedSkills(skills);
-    setCurrentPage('decision');
+  const handleValidationUpdate = (roleId: string, skills: SkillMapping[]) => {
+    setCachedSkillsMap(prev => ({ ...prev, [roleId]: skills }));
+  };
+
+  const handleDecisionFetched = (roleId: string, decision: DecisionSupport) => {
+    setCachedDecisionMap(prev => ({ ...prev, [roleId]: decision }));
+  };
+
+  const handleResumeFormSubmit = (input: UserExperienceInput) => {
+    setUserExperienceInput(input);
+    // Clear the specific resume cache for this role if the input changed
+    if (selectedRole) {
+      setCachedResumeMap(prev => {
+        const next = { ...prev };
+        delete next[selectedRole.id];
+        return next;
+      });
+    }
+    setCurrentPage('resume');
+  };
+
+  const handleResumeFetched = (roleId: string, resume: ResumeDraft) => {
+    setCachedResumeMap(prev => ({ ...prev, [roleId]: resume }));
   };
 
   const handleExit = (type: 'not_for_me' | 'unsure') => {
@@ -39,11 +95,19 @@ const App: React.FC = () => {
   const handleReset = () => {
     setUserContext(null);
     setAiPreview(null);
+    setCachedRoles(null);
     setSelectedRole(null);
-    setValidatedSkills([]);
+    setCachedSkillsMap({});
+    setCachedDecisionMap({});
+    setCachedResumeMap({});
+    setUserExperienceInput(undefined);
     setExitType(null);
     setCurrentPage('builder');
   };
+
+  if (!user) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   return (
     <div className="min-h-screen">
@@ -60,11 +124,20 @@ const App: React.FC = () => {
             <span className={currentPage === 'builder' ? 'text-indigo-600 border-b-2 border-indigo-600 py-1' : ''}>1. Context</span>
             <span className={currentPage === 'exploration' ? 'text-indigo-600 border-b-2 border-indigo-600 py-1' : ''}>2. Explore</span>
             <span className={currentPage === 'validation' ? 'text-indigo-600 border-b-2 border-indigo-600 py-1' : ''}>3. Validate</span>
-            <span className={currentPage === 'decision' ? 'text-indigo-600 border-b-2 border-indigo-600 py-1' : ''}>4. Decision</span>
+            <span className={['decision', 'resume-form', 'resume'].includes(currentPage) ? 'text-indigo-600 border-b-2 border-indigo-600 py-1' : ''}>4. Action</span>
           </div>
 
-          <div className="text-sm font-medium text-gray-500">
-            US Market Analyst
+          <div className="flex items-center gap-4">
+            <div className="hidden lg:block text-right">
+              <p className="text-xs font-bold text-gray-900 leading-tight">{user.name}</p>
+              <button onClick={handleLogout} className="text-[10px] text-gray-400 hover:text-red-500 uppercase font-black tracking-widest transition-colors">Sign Out</button>
+            </div>
+            <img 
+              src={user.avatar} 
+              alt="User profile" 
+              className="w-10 h-10 rounded-xl border-2 border-indigo-50 shadow-sm cursor-pointer hover:border-indigo-200 transition-all"
+              onClick={handleLogout}
+            />
           </div>
         </div>
       </nav>
@@ -77,6 +150,8 @@ const App: React.FC = () => {
         {currentPage === 'exploration' && userContext && (
           <ExplorationPage 
             context={userContext} 
+            cachedRoles={cachedRoles}
+            onRolesFetched={setCachedRoles}
             onSelectRole={handleRoleSelect} 
             onExit={handleExit} 
           />
@@ -87,17 +162,44 @@ const App: React.FC = () => {
             role={selectedRole} 
             context={userContext} 
             preview={aiPreview}
-            onNext={handleValidationComplete}
+            cachedSkills={cachedSkillsMap[selectedRole.id]}
+            onSkillsUpdate={(skills) => handleValidationUpdate(selectedRole.id, skills)}
+            onNext={() => setCurrentPage('decision')}
             onBack={() => setCurrentPage('exploration')}
           />
         )}
 
-        {currentPage === 'decision' && selectedRole && validatedSkills && userContext && (
+        {currentPage === 'decision' && selectedRole && userContext && cachedSkillsMap[selectedRole.id] && (
           <DecisionPage 
             role={selectedRole} 
-            skills={validatedSkills} 
+            skills={cachedSkillsMap[selectedRole.id]} 
             context={userContext}
+            cachedDecision={cachedDecisionMap[selectedRole.id]}
+            onDecisionFetched={(d) => handleDecisionFetched(selectedRole.id, d)}
             onReset={handleReset}
+            onNavigateToResume={() => setCurrentPage('resume-form')}
+            onBack={() => setCurrentPage('validation')}
+          />
+        )}
+
+        {currentPage === 'resume-form' && selectedRole && cachedSkillsMap[selectedRole.id] && (
+          <ResumeFormPage 
+            role={selectedRole}
+            skills={cachedSkillsMap[selectedRole.id]}
+            onNext={handleResumeFormSubmit}
+            onBack={() => setCurrentPage('decision')}
+          />
+        )}
+
+        {currentPage === 'resume' && selectedRole && userContext && cachedSkillsMap[selectedRole.id] && (
+          <ResumePage 
+            role={selectedRole} 
+            skills={cachedSkillsMap[selectedRole.id]} 
+            context={userContext}
+            personalInfo={userExperienceInput}
+            cachedResume={cachedResumeMap[selectedRole.id]}
+            onResumeFetched={(r) => handleResumeFetched(selectedRole.id, r)}
+            onBack={() => setCurrentPage('resume-form')}
           />
         )}
 

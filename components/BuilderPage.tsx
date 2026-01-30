@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { UserContext, AIPreview } from '../types';
 import { generateAIUnderstanding } from '../geminiService';
 import { StepLayout } from './StepLayout';
@@ -17,15 +17,24 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
   });
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<AIPreview | null>(null);
+  const [showCustomOrigin, setShowCustomOrigin] = useState(false);
+  const [showCustomDirection, setShowCustomDirection] = useState(false);
+  const [customDirection, setCustomDirection] = useState('');
+  
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (preview && resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [preview]);
 
   const origins = [
     'Content / Media / Communications',
     'Marketing / Growth',
     'Operations / Project coordination',
     'Engineering / Technical role',
-    'Consulting / Business role',
-    'Mixed background',
-    'Others'
+    'Consulting / Business role'
   ];
 
   const directions = [
@@ -33,7 +42,6 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
     'Digital marketing / Growth',
     'Data / Analytics',
     'Strategy / BizOps',
-    'Others',
     'Still exploring / not sure yet'
   ];
 
@@ -63,17 +71,47 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
     }));
   };
 
+  const getFinalContext = (): UserContext => {
+    const finalConsidering = [...context.considering];
+    if (showCustomDirection && customDirection.trim()) {
+      finalConsidering.push(customDirection.trim());
+    }
+    return {
+      ...context,
+      considering: finalConsidering
+    };
+  };
+
   const handleGeneratePreview = async () => {
-    if (!context.origin) return;
+    const finalContext = getFinalContext();
+    if (!finalContext.origin || finalContext.considering.length === 0) return;
+    
     setLoading(true);
     try {
-      const res = await generateAIUnderstanding(context);
+      const res = await generateAIUnderstanding(finalContext);
       setPreview(res);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOriginClick = (opt: string) => {
+    setShowCustomOrigin(false);
+    setContext({ ...context, origin: opt });
+  };
+
+  const handleCustomOriginClick = () => {
+    setShowCustomOrigin(true);
+    if (origins.includes(context.origin)) {
+      setContext({ ...context, origin: '' });
+    }
+  };
+
+  const isFormValid = () => {
+    const finalContext = getFinalContext();
+    return finalContext.origin && finalContext.considering.length > 0;
   };
 
   return (
@@ -85,13 +123,13 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
         
         <section>
           <h2 className="text-xl font-semibold mb-4">1. What are you transitioning from?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             {origins.map(opt => (
               <button
                 key={opt}
-                onClick={() => setContext({ ...context, origin: opt })}
+                onClick={() => handleOriginClick(opt)}
                 className={`text-left px-4 py-3 rounded-xl border transition-all ${
-                  context.origin === opt 
+                  !showCustomOrigin && context.origin === opt 
                     ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-200' 
                     : 'border-gray-200 hover:border-indigo-300'
                 }`}
@@ -99,13 +137,41 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
                 {opt}
               </button>
             ))}
+            <button
+              onClick={handleCustomOriginClick}
+              className={`text-left px-4 py-3 rounded-xl border transition-all ${
+                showCustomOrigin 
+                  ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-200' 
+                  : 'border-gray-200 hover:border-indigo-300'
+              }`}
+            >
+              <i className="fas fa-edit mr-2 opacity-50"></i>
+              Other / Mixed background
+            </button>
           </div>
+
+          {showCustomOrigin && (
+            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+              <label className="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5 ml-1">Describe your background</label>
+              <input
+                type="text"
+                autoFocus
+                placeholder="e.g. Healthcare Professional, Teacher, Military Officer..."
+                className="w-full p-4 rounded-xl border-2 border-indigo-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50/50 outline-none transition-all shadow-sm"
+                value={context.origin}
+                onChange={(e) => setContext({ ...context, origin: e.target.value })}
+              />
+              <p className="mt-2 text-[11px] text-gray-400 italic ml-1">
+                Tell us exactly what you're doing now so we can identify specific transferable skills.
+              </p>
+            </div>
+          )}
         </section>
 
         <section>
           <h2 className="text-xl font-semibold mb-2">2. What roles are you considering moving into?</h2>
           <p className="text-sm text-gray-500 mb-4">(It’s okay if you’re still exploring. Select up to 3.)</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             {directions.map(opt => (
               <button
                 key={opt}
@@ -119,7 +185,32 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
                 {opt}
               </button>
             ))}
+            <button
+              onClick={() => setShowCustomDirection(!showCustomDirection)}
+              className={`text-left px-4 py-3 rounded-xl border transition-all ${
+                showCustomDirection 
+                  ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-200' 
+                  : 'border-gray-200 hover:border-indigo-300'
+              }`}
+            >
+              <i className="fas fa-plus mr-2 opacity-50"></i>
+              Something else...
+            </button>
           </div>
+
+          {showCustomDirection && (
+            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+              <label className="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5 ml-1">Enter a custom role or direction</label>
+              <input
+                type="text"
+                autoFocus
+                placeholder="e.g. Community Manager, Chief of Staff, UX Researcher..."
+                className="w-full p-4 rounded-xl border-2 border-indigo-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50/50 outline-none transition-all shadow-sm"
+                value={customDirection}
+                onChange={(e) => setCustomDirection(e.target.value)}
+              />
+            </div>
+          )}
         </section>
 
         <section>
@@ -154,7 +245,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
         <div className="pt-6 border-t border-gray-100 flex flex-col items-center">
           <button
             onClick={handleGeneratePreview}
-            disabled={loading || !context.origin || context.considering.length === 0}
+            disabled={loading || !isFormValid()}
             className="px-8 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6 shadow-md"
           >
             {loading ? <i className="fas fa-spinner fa-spin mr-2"></i> : null}
@@ -162,7 +253,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
           </button>
 
           {preview && (
-            <div className="w-full bg-gray-50 rounded-2xl p-6 border border-gray-200">
+            <div ref={resultsRef} className="w-full bg-gray-50 rounded-2xl p-6 border border-gray-200 scroll-mt-24">
               <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
                 <i className="fas fa-brain text-indigo-500 mr-2"></i>
                 Here’s how your transition looks so far
@@ -205,7 +296,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
         {preview && (
           <div className="pt-8 flex flex-col items-center border-t border-gray-100">
             <button
-              onClick={() => onNext(context, preview)}
+              onClick={() => onNext(getFinalContext(), preview)}
               className="px-10 py-4 bg-gray-900 text-white rounded-full font-bold hover:bg-black transition-all transform hover:scale-105 shadow-xl"
             >
               Let’s stress-test this transition

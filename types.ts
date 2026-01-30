@@ -1,10 +1,22 @@
 
+export interface User {
+  name: string;
+  email: string;
+  avatar: string;
+}
+
 export interface UserContext {
   origin: string;
   considering: string[];
   frictionPoints: string[];
   frictionText?: string;
   experienceSummary?: string;
+}
+
+export interface UserExperienceInput {
+  rawExperience: string;
+  contactEmail?: string;
+  linkedIn?: string;
 }
 
 export interface AIPreview {
@@ -36,4 +48,11 @@ export interface DecisionSupport {
   risks: string[];
 }
 
-export type Page = 'builder' | 'exploration' | 'validation' | 'decision' | 'exit';
+export interface ResumeDraft {
+  summary: string;
+  pivotPoints: { original: string; reframed: string; why: string }[];
+  suggestedSkills: string[];
+  experienceGuidance: string;
+}
+
+export type Page = 'builder' | 'exploration' | 'validation' | 'decision' | 'resume-form' | 'resume' | 'exit';

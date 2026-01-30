@@ -8,39 +8,130 @@ interface ValidationPageProps {
   role: RoleCard;
   context: UserContext;
   preview: AIPreview;
-  onNext: (skills: SkillMapping[]) => void;
+  cachedSkills: SkillMapping[] | undefined;
+  onSkillsUpdate: (skills: SkillMapping[]) => void;
+  onNext: () => void;
   onBack: () => void;
 }
 
-export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, preview, onNext, onBack }) => {
-  const [skills, setSkills] = useState<SkillMapping[]>([]);
-  const [loading, setLoading] = useState(true);
+const ANALYSIS_STEPS = [
+  { id: 1, label: 'Deconstructing Role', icon: 'fa-layer-group', description: 'Breaking down market expectations for this position...' },
+  { id: 2, label: 'Scanning Background', icon: 'fa-id-badge', description: 'Identifying hidden transferable assets in your origin story...' },
+  { id: 3, label: 'Standardizing Context', icon: 'fa-bridge', description: 'Translating your experience into industry-standard terms...' },
+  { id: 4, label: 'Gap Identification', icon: 'fa-magnifying-glass-chart', description: 'Mapping assumptions against critical role requirements...' },
+  { id: 5, label: 'Finalizing Bridge', icon: 'fa-check-double', description: 'Preparing your validation dashboard...' },
+];
+
+export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, preview, cachedSkills, onSkillsUpdate, onNext, onBack }) => {
+  const [skills, setSkills] = useState<SkillMapping[]>(cachedSkills || []);
+  const [loading, setLoading] = useState(!cachedSkills);
+  const [activeStep, setActiveStep] = useState(0);
 
   useEffect(() => {
-    const fetchSkills = async () => {
-      try {
-        const res = await generateSkillMapping(role, context);
-        setSkills(res);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+    let stepInterval: number;
+    if (loading) {
+      stepInterval = window.setInterval(() => {
+        setActiveStep((prev) => (prev < ANALYSIS_STEPS.length - 1 ? prev + 1 : prev));
+      }, 1500); // Progress through visuals every 1.5s
+    }
+
+    if (!cachedSkills) {
+      const fetchSkills = async () => {
+        try {
+          const res = await generateSkillMapping(role, context);
+          // Wait a tiny bit if the API is too fast, so the user sees the cool animation
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          setSkills(res);
+          onSkillsUpdate(res);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+          if (stepInterval) clearInterval(stepInterval);
+        }
+      };
+      fetchSkills();
+    }
+
+    return () => {
+      if (stepInterval) clearInterval(stepInterval);
     };
-    fetchSkills();
-  }, [role, context]);
+  }, [role, context, cachedSkills, onSkillsUpdate, loading]);
 
   const updateConfidence = (index: number, confidence: 'high' | 'unsure' | 'gap') => {
-    setSkills(prev => prev.map((s, i) => i === index ? { ...s, confidence } : s));
+    const updated = skills.map((s, i) => i === index ? { ...s, confidence } : s);
+    setSkills(updated);
+    onSkillsUpdate(updated);
   };
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <i className="fas fa-vial fa-spin text-4xl text-indigo-500 mb-4"></i>
-          <p className="text-gray-600 font-medium">Deconstructing skills and mapping assumptions...</p>
+      <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <div className="w-full max-w-xl">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-indigo-50 text-indigo-600 mb-6 relative overflow-hidden">
+               <i className={`fas ${ANALYSIS_STEPS[activeStep].icon} text-3xl z-10 animate-bounce`}></i>
+               <div className="absolute inset-0 bg-indigo-100/50 animate-pulse"></div>
+            </div>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Analysis Engine Active</h2>
+            <p className="text-gray-500 italic">{ANALYSIS_STEPS[activeStep].description}</p>
+          </div>
+
+          <div className="space-y-6">
+            {ANALYSIS_STEPS.map((step, idx) => (
+              <div 
+                key={step.id} 
+                className={`flex items-center gap-4 transition-all duration-500 ${idx === activeStep ? 'scale-100 opacity-100' : idx < activeStep ? 'opacity-50 scale-95' : 'opacity-20 scale-90'}`}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                  idx <= activeStep ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-200 text-gray-300'
+                }`}>
+                  {idx < activeStep ? <i className="fas fa-check text-xs"></i> : <span className="text-xs font-bold">{step.id}</span>}
+                </div>
+                <div className="flex-grow">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className={`text-sm font-bold uppercase tracking-widest ${idx === activeStep ? 'text-indigo-600' : 'text-gray-500'}`}>
+                      {step.label}
+                    </span>
+                    {idx === activeStep && (
+                      <span className="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded font-black animate-pulse">PROCESSING</span>
+                    )}
+                  </div>
+                  <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full bg-indigo-600 transition-all duration-1000 ease-out ${idx === activeStep ? 'w-1/2' : idx < activeStep ? 'w-full' : 'w-0'}`}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-12 p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <div className="flex items-center gap-3 text-[10px] font-mono text-gray-400 uppercase tracking-widest">
+              <span className="flex h-2 w-2 rounded-full bg-green-500"></span>
+              Neural Bridge Connection: Established
+            </div>
+            <div className="mt-2 h-16 overflow-hidden relative">
+              <div className="text-[10px] font-mono text-indigo-400/60 space-y-1 animate-[slideUp_10s_linear_infinite]">
+                <p>> fetch market_data --role="{role.name}"</p>
+                <p>> parsing experience_summary --origin="{context.origin}"</p>
+                <p>> cross_referencing skills[transferable]</p>
+                <p>> weighting uncertainty_factors...</p>
+                <p>> mapping evidence_nodes...</p>
+                <p>> generating bridge_narrative_matrix...</p>
+                <p>> success: context_sync_complete</p>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-50 to-transparent"></div>
+            </div>
+          </div>
         </div>
+        <style>{`
+          @keyframes slideUp {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100%); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -141,7 +232,7 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, p
             <i className="fas fa-arrow-left mr-2"></i> Back to options
           </button>
           <button 
-            onClick={() => onNext(skills)}
+            onClick={onNext}
             className="px-8 py-4 bg-indigo-600 text-white rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg transform hover:-translate-y-1"
           >
             Continue to decision support
