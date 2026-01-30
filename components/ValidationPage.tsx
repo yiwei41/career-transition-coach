@@ -114,13 +114,13 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, p
             </div>
             <div className="mt-2 h-16 overflow-hidden relative">
               <div className="text-[10px] font-mono text-indigo-400/60 space-y-1 animate-[slideUp_10s_linear_infinite]">
-                <p>> fetch market_data --role="{role.name}"</p>
-                <p>> parsing experience_summary --origin="{context.origin}"</p>
-                <p>> cross_referencing skills[transferable]</p>
-                <p>> weighting uncertainty_factors...</p>
-                <p>> mapping evidence_nodes...</p>
-                <p>> generating bridge_narrative_matrix...</p>
-                <p>> success: context_sync_complete</p>
+                <p>&gt; fetch market_data --role="{role.name}"</p>
+                <p>&gt; parsing experience_summary --origin="{context.origin}"</p>
+                <p>&gt; cross_referencing skills[transferable]</p>
+                <p>&gt; weighting uncertainty_factors...</p>
+                <p>&gt; mapping evidence_nodes...</p>
+                <p>&gt; generating bridge_narrative_matrix...</p>
+                <p>&gt; success: context_sync_complete</p>
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-gray-50 to-transparent"></div>
             </div>
