@@ -116,16 +116,16 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({ context, cache
             </div>
             <div className="h-20 overflow-hidden relative">
               <div className="text-[10px] font-mono text-gray-400/80 space-y-1.5 animate-[scrollUp_12s_linear_infinite]">
-                <p className="text-indigo-400 font-bold">&gt; INITIALIZING ROLE_ENGINE_V4</p>
-                <p className="text-gray-500">&gt; DECODING ORIGIN_CONTEXT: {context.origin}</p>
-                <p className="text-gray-500">&gt; MAPPING DIRECTIONS: {context.considering.join(", ")}</p>
-                <p className="text-gray-500">&gt; EVALUATING FRICTION_NODES: {context.frictionPoints.length} points detected</p>
-                <p className="text-gray-500">&gt; QUERYING MARKET_TAXONOMY: PIVOT_PATH_ALPHA</p>
-                <p className="text-indigo-400">&gt; GENERATING HYPOTHESIS: ADJACENT_ROLE_MATCH</p>
-                <p className="text-gray-500">&gt; OPTIMIZING ASSET_REUSE_RATIO...</p>
-                <p className="text-gray-500">&gt; CALCULATING PIVOT_VELOCITY...</p>
-                <p className="text-green-400 font-bold">&gt; STATUS: SYNTHESIS_READY_FOR_VALIDATION</p>
-                <p className="text-gray-500">&gt; PREPARING POSSIBILITY_CARDS...</p>
+                <p className="text-indigo-400 font-bold">> INITIALIZING ROLE_ENGINE_V4</p>
+                <p className="text-gray-500">> DECODING ORIGIN_CONTEXT: {context.origin}</p>
+                <p className="text-gray-500">> MAPPING DIRECTIONS: {context.considering.join(", ")}</p>
+                <p className="text-gray-500">> EVALUATING FRICTION_NODES: {context.frictionPoints.length} points detected</p>
+                <p className="text-gray-500">> QUERYING MARKET_TAXONOMY: PIVOT_PATH_ALPHA</p>
+                <p className="text-indigo-400">> GENERATING HYPOTHESIS: ADJACENT_ROLE_MATCH</p>
+                <p className="text-gray-500">> OPTIMIZING ASSET_REUSE_RATIO...</p>
+                <p className="text-gray-500">> CALCULATING PIVOT_VELOCITY...</p>
+                <p className="text-green-400 font-bold">> STATUS: SYNTHESIS_READY_FOR_VALIDATION</p>
+                <p className="text-gray-500">> PREPARING POSSIBILITY_CARDS...</p>
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
               <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-transparent to-transparent"></div>
