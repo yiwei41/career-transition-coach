@@ -34,12 +34,8 @@ const App: React.FC = () => {
 
   const [exitType, setExitType] = useState<'not_for_me' | 'unsure' | null>(null);
 
-  const handleLogin = () => {
-    setUser({
-      name: "Alex Johnson",
-      email: "alex.j@gmail.com",
-      avatar: "https://ui-avatars.com/api/?name=Alex+Johnson&background=4f46e5&color=fff"
-    });
+  const handleLogin = (loggedInUser: User) => {
+    setUser(loggedInUser);
   };
 
   const handleLogout = () => {
