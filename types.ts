@@ -34,6 +34,17 @@ export interface DecisionSupport {
   mainUncertainty: string;
   signals: string[];
   risks: string[];
+  suggestedNextSteps?: string[];
 }
 
-export type Page = 'builder' | 'exploration' | 'validation' | 'decision' | 'exit';
+export interface HistoryRecord {
+  id: string;
+  timestamp: number;
+  role: RoleCard;
+  context: UserContext;
+  skills: SkillMapping[];
+  decision?: DecisionSupport;
+  completed: boolean; // true if reached decision page, false if exited early
+}
+
+export type Page = 'builder' | 'exploration' | 'validation' | 'decision' | 'exit' | 'history' | 'resume';

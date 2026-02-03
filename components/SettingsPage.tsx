@@ -1,0 +1,259 @@
+import React, { useState, useEffect } from 'react';
+import { StepLayout } from './StepLayout';
+import { clearHistoryRecords, getHistoryRecords } from '../historyService';
+import { getCurrentLanguage, setLanguage, getTranslations, languageNames, Language } from '../locales';
+
+interface SettingsPageProps {
+  onBack?: () => void;
+}
+
+export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
+  const [historyCount, setHistoryCount] = useState(0);
+  const [authMethod, setAuthMethod] = useState<string>('guest');
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [currentLang, setCurrentLang] = useState<Language>(getCurrentLanguage());
+  const t = getTranslations();
+
+  useEffect(() => {
+    // Load current settings
+    const history = getHistoryRecords();
+    setHistoryCount(history.length);
+    
+    const method = localStorage.getItem('ctc_auth_method') || 'guest';
+    setAuthMethod(method);
+    
+    if (method === 'google') {
+      const googleUser = localStorage.getItem('ctc_google_user');
+      if (googleUser) {
+        try {
+          const user = JSON.parse(googleUser);
+          setUserEmail(user.email || '');
+        } catch {
+          // Ignore parse errors
+        }
+      }
+    }
+  }, []);
+
+  // Listen for language changes
+  useEffect(() => {
+    const handleLanguageChange = () => {
+      setCurrentLang(getCurrentLanguage());
+      // Force re-render by updating state
+      window.location.reload(); // Simple approach - reload to apply translations
+    };
+    
+    window.addEventListener('languageChanged', handleLanguageChange);
+    return () => window.removeEventListener('languageChanged', handleLanguageChange);
+  }, []);
+
+  const handleLanguageChange = (lang: Language) => {
+    setLanguage(lang);
+    setCurrentLang(lang);
+    // Reload to apply translations
+    setTimeout(() => window.location.reload(), 100);
+  };
+
+  const handleClearHistory = () => {
+    if (window.confirm('Are you sure you want to clear all history? This cannot be undone.')) {
+      clearHistoryRecords();
+      setHistoryCount(0);
+    }
+  };
+
+  const handleExportData = () => {
+    const history = getHistoryRecords();
+    if (history.length === 0) {
+      alert('No data to export.');
+      return;
+    }
+    
+    const dataStr = JSON.stringify(history, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `career-transition-history-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="space-y-6">
+        {/* Language Section */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+              <i className="fas fa-language text-xl"></i>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">{t.settings.language}</h2>
+              <p className="text-sm text-gray-500">{t.settings.languageSubtitle}</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {(Object.keys(languageNames) as Language[]).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => handleLanguageChange(lang)}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border transition-colors ${
+                  currentLang === lang
+                    ? 'border-indigo-500 bg-indigo-50'
+                    : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    currentLang === lang
+                      ? 'bg-indigo-500 text-white'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    <i className={`fas ${currentLang === lang ? 'fa-check' : 'fa-circle'}`}></i>
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-semibold text-gray-900">{languageNames[lang]}</div>
+                    <div className="text-xs text-gray-500">
+                      {lang === 'en' && 'English'}
+                      {lang === 'zh-CN' && 'Simplified Chinese'}
+                      {lang === 'zh-TW' && 'Traditional Chinese'}
+                    </div>
+                  </div>
+                </div>
+                {currentLang === lang && (
+                  <i className="fas fa-check-circle text-indigo-500"></i>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Account Section */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+              <i className="fas fa-user text-xl"></i>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">{t.settings.account}</h2>
+              <p className="text-sm text-gray-500">{t.settings.accountSubtitle}</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">{t.settings.loginMethod}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {authMethod === 'google' ? 'Google Account' : 'Guest Mode'}
+                </div>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                authMethod === 'google' 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-gray-100 text-gray-700'
+              }`}>
+                {authMethod === 'google' ? 'Connected' : 'Guest'}
+              </div>
+            </div>
+
+            {userEmail && (
+              <div className="flex items-center justify-between py-3 border-b border-gray-100">
+                <div>
+                  <div className="text-sm font-semibold text-gray-900">{t.settings.email}</div>
+                  <div className="text-xs text-gray-500 mt-1">{userEmail}</div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between py-3">
+              <div>
+                <div className="text-sm font-semibold text-gray-900">{t.settings.historyRecords}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {historyCount} {historyCount === 1 ? t.history.session : t.history.sessions} saved
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Data Management Section */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
+              <i className="fas fa-database text-xl"></i>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">{t.settings.dataManagement}</h2>
+              <p className="text-sm text-gray-500">{t.settings.dataManagementSubtitle}</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={handleExportData}
+              disabled={historyCount === 0}
+              className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                  <i className="fas fa-download"></i>
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-semibold text-gray-900">{t.settings.exportData}</div>
+                  <div className="text-xs text-gray-500">{t.settings.exportDataDesc}</div>
+                </div>
+              </div>
+              <i className="fas fa-chevron-right text-gray-400"></i>
+            </button>
+
+            <button
+              onClick={handleClearHistory}
+              disabled={historyCount === 0}
+              className="w-full flex items-center justify-between p-4 rounded-xl border border-red-200 hover:border-red-300 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-red-100 text-red-600 flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                  <i className="fas fa-trash"></i>
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-semibold text-gray-900">{t.settings.clearHistory}</div>
+                  <div className="text-xs text-gray-500">{t.settings.clearHistoryDesc}</div>
+                </div>
+              </div>
+              <i className="fas fa-chevron-right text-gray-400"></i>
+            </button>
+          </div>
+        </div>
+
+        {/* Privacy & Security Section */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+              <i className="fas fa-shield-halved text-xl"></i>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">{t.settings.privacy}</h2>
+              <p className="text-sm text-gray-500">{t.settings.privacySubtitle}</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                <strong className="font-semibold">{t.settings.dataStorage}:</strong> {t.settings.dataStorageDesc}
+              </p>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                <strong className="font-semibold">{t.settings.googleLogin}:</strong> {t.settings.googleLoginDesc}
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+  );
+};
