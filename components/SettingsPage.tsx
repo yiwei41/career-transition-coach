@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { StepLayout } from './StepLayout';
 import { clearHistoryRecords, getHistoryRecords } from '../historyService';
-import { getCurrentLanguage, setLanguage, getTranslations, languageNames, Language } from '../locales';
+import { languageNames, Language } from '../locales';
+import { useLanguage } from '../LanguageContext';
 
 interface SettingsPageProps {
   onBack?: () => void;
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
+  const { t, language: currentLang, setLanguage: setLang } = useLanguage();
   const [historyCount, setHistoryCount] = useState(0);
   const [authMethod, setAuthMethod] = useState<string>('guest');
   const [userEmail, setUserEmail] = useState<string>('');
-  const [currentLang, setCurrentLang] = useState<Language>(getCurrentLanguage());
-  const t = getTranslations();
 
   useEffect(() => {
     // Load current settings
@@ -35,27 +34,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
     }
   }, []);
 
-  // Listen for language changes
-  useEffect(() => {
-    const handleLanguageChange = () => {
-      setCurrentLang(getCurrentLanguage());
-      // Force re-render by updating state
-      window.location.reload(); // Simple approach - reload to apply translations
-    };
-    
-    window.addEventListener('languageChanged', handleLanguageChange);
-    return () => window.removeEventListener('languageChanged', handleLanguageChange);
-  }, []);
-
   const handleLanguageChange = (lang: Language) => {
-    setLanguage(lang);
-    setCurrentLang(lang);
-    // Reload to apply translations
-    setTimeout(() => window.location.reload(), 100);
+    setLang(lang);
   };
 
   const handleClearHistory = () => {
-    if (window.confirm('Are you sure you want to clear all history? This cannot be undone.')) {
+    if (window.confirm(t.settings.clearHistoryConfirm)) {
       clearHistoryRecords();
       setHistoryCount(0);
     }
@@ -64,7 +48,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
   const handleExportData = () => {
     const history = getHistoryRecords();
     if (history.length === 0) {
-      alert('No data to export.');
+      alert(t.settings.noDataToExport);
       return;
     }
     
@@ -147,7 +131,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
               <div>
                 <div className="text-sm font-semibold text-gray-900">{t.settings.loginMethod}</div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {authMethod === 'google' ? 'Google Account' : 'Guest Mode'}
+                  {authMethod === 'google' ? t.settings.googleAccount : t.settings.guestMode}
                 </div>
               </div>
               <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -155,7 +139,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
                   ? 'bg-green-100 text-green-700' 
                   : 'bg-gray-100 text-gray-700'
               }`}>
-                {authMethod === 'google' ? 'Connected' : 'Guest'}
+                {authMethod === 'google' ? t.settings.connected : t.settings.guest}
               </div>
             </div>
 
@@ -172,7 +156,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
               <div>
                 <div className="text-sm font-semibold text-gray-900">{t.settings.historyRecords}</div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {historyCount} {historyCount === 1 ? t.history.session : t.history.sessions} saved
+                  {historyCount} {historyCount === 1 ? t.history.session : t.history.sessions} {t.settings.saved}
                 </div>
               </div>
             </div>

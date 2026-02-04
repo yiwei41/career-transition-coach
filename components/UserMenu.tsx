@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getHistoryRecords } from '../historyService';
+import { useLanguage } from '../LanguageContext';
 
 interface UserMenuProps {
   onHistoryClick: () => void;
@@ -12,6 +13,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   onSettingsClick,
   onLogout 
 }) => {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [userInfo, setUserInfo] = useState<{ name: string; email: string; avatar?: string } | null>(null);
   const [historyCount, setHistoryCount] = useState(0);
@@ -104,7 +106,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
           </div>
         )}
         <div className="hidden md:block text-left">
-          <div className="text-sm font-semibold text-gray-900">{userInfo?.name || 'Guest'}</div>
+          <div className="text-sm font-semibold text-gray-900">{userInfo?.name || t.app.guest}</div>
           {userInfo?.email && (
             <div className="text-xs text-gray-500">{userInfo.email}</div>
           )}
@@ -131,7 +133,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               )}
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold text-gray-900 truncate">
-                  {userInfo?.name || 'Guest'}
+                  {userInfo?.name || t.app.guest}
                 </div>
                 {userInfo?.email && (
                   <div className="text-xs text-gray-500 truncate">{userInfo.email}</div>
@@ -167,8 +169,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                   <i className="fas fa-cog"></i>
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-semibold text-gray-900">Settings</div>
-                  <div className="text-xs text-gray-500">Preferences & account</div>
+                  <div className="text-sm font-semibold text-gray-900">{t.app.settings}</div>
+                  <div className="text-xs text-gray-500">{t.app.preferencesAndAccount}</div>
                 </div>
                 <i className="fas fa-chevron-right text-gray-400 text-xs"></i>
               </button>
@@ -184,8 +186,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                 <i className="fas fa-sign-out-alt"></i>
               </div>
               <div className="flex-1">
-                <div className="text-sm font-semibold">Sign out</div>
-                <div className="text-xs text-red-400">Log out of your account</div>
+                <div className="text-sm font-semibold">{t.app.signOut}</div>
+                <div className="text-xs text-red-400">{t.app.signOutDesc}</div>
               </div>
             </button>
           </div>

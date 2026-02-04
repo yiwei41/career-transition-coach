@@ -1,6 +1,7 @@
 import React, { useState, FormEvent, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { waitForGoogleScript } from './googleAuth';
+import { useLanguage } from './LanguageContext';
 
 declare global {
   interface Window {
@@ -23,6 +24,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
   onEmailSignup,
   onGuestContinue,
 }) => {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<Mode>('login');
   const [showEmail, setShowEmail] = useState(false);
   const [email, setEmail] = useState('');
@@ -280,7 +282,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
               ) : (
                 <>
                   <i className="fab fa-google text-base" aria-hidden="true" />
-                  <span>Continue with Google</span>
+                  <span>{t.auth.googleSignIn}</span>
                 </>
               )}
             </button>
@@ -311,7 +313,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
             }}
             className="w-full text-xs text-slate-300 mb-2 underline underline-offset-4 decoration-slate-500 hover:text-white text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full py-1 cursor-pointer"
           >
-            Continue without an account
+            {t.auth.guestContinue}
           </button>
 
           <div className="flex items-center mb-2">

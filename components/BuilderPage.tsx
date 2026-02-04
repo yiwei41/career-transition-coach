@@ -5,29 +5,50 @@ import { generateAIUnderstanding } from '../geminiService';
 import { StepLayout } from './StepLayout';
 import { QuickScanCharts } from './QuickScanCharts';
 import { AnalysisProgressDisplay } from './AnalysisProgressDisplay';
+import { useLanguage } from '../LanguageContext';
+
+const ORIGIN_IDS = ['Content', 'Marketing', 'Operations', 'Data', 'Business', 'Mixed'];
 
 interface BuilderPageProps {
   onNext: (context: UserContext, preview: AIPreview) => void;
+  initialContext?: UserContext | null;
+  initialPreview?: AIPreview | null;
 }
 
-export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
+export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext, initialContext, initialPreview }) => {
+  const { t } = useLanguage();
   type BuilderStep = 'origin' | 'target_roles' | 'friction' | 'preview';
 
-  const [step, setStep] = useState<BuilderStep>('origin');
-  const [context, setContext] = useState<UserContext>({
-    origin: '',
-    considering: [],
-    frictionPoints: [],
-    frictionText: '',
+  const [step, setStep] = useState<BuilderStep>(() => {
+    if (initialContext?.origin && initialPreview) return 'preview';
+    if (initialContext?.frictionPoints?.[0]) return 'friction';
+    if (initialContext?.considering?.length) return 'target_roles';
+    return 'origin';
   });
 
-  const [customOrigin, setCustomOrigin] = useState('');
+  const [context, setContext] = useState<UserContext>(() => {
+    if (!initialContext) return { origin: '', considering: [], frictionPoints: [], frictionText: '' };
+    const origin = initialContext.origin;
+    const isCustom = origin && !ORIGIN_IDS.includes(origin);
+    return {
+      ...initialContext,
+      origin: isCustom ? 'Mixed' : origin || '',
+    };
+  });
+
+  const [customOrigin, setCustomOrigin] = useState(() => {
+    if (initialContext?.origin && !ORIGIN_IDS.includes(initialContext.origin)) {
+      return initialContext.origin;
+    }
+    return '';
+  });
+
   const [cluster, setCluster] = useState<'product' | 'data' | 'business'>('product');
 
   const [loading, setLoading] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<AIPreview | null>(null);
+  const [preview, setPreview] = useState<AIPreview | null>(initialPreview || null);
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -47,12 +68,12 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
   ];
 
   const origins: { id: string; label: string; icon: string }[] = [
-    { id: 'Content', label: 'Content', icon: 'fa-pen-nib' },
-    { id: 'Marketing', label: 'Marketing', icon: 'fa-bullhorn' },
-    { id: 'Operations', label: 'Operations', icon: 'fa-gears' },
-    { id: 'Data', label: 'Data', icon: 'fa-chart-line' },
-    { id: 'Business', label: 'Business', icon: 'fa-briefcase' },
-    { id: 'Mixed', label: 'Mixed / Other', icon: 'fa-layer-group' },
+    { id: 'Content', label: t.builder.content, icon: 'fa-pen-nib' },
+    { id: 'Marketing', label: t.builder.marketing, icon: 'fa-bullhorn' },
+    { id: 'Operations', label: t.builder.operations, icon: 'fa-gears' },
+    { id: 'Data', label: t.builder.data, icon: 'fa-chart-line' },
+    { id: 'Business', label: t.builder.business, icon: 'fa-briefcase' },
+    { id: 'Mixed', label: t.builder.mixedOther, icon: 'fa-layer-group' },
   ];
 
   const roleClusters: Record<'product' | 'data' | 'business', { label: string; icon: string; roles: string[] }> = {
@@ -195,7 +216,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
     <StepLayout
       title={
         step === 'origin'
-          ? 'Your background'
+          ? t.builder.yourBackground
           : step === 'target_roles'
             ? 'Target roles'
             : step === 'friction'
@@ -204,7 +225,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
       }
       subtitle={
         step === 'origin'
-          ? 'Pick one. Keep it simple.'
+          ? t.builder.pickOne
           : step === 'target_roles'
             ? 'Pick up to 3. You can change later.'
             : step === 'friction'
@@ -274,7 +295,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
                 disabled={!context.origin}
                 className="px-8 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               >
-                Next <i className="fas fa-arrow-right ml-2"></i>
+                {t.builder.next} <i className="fas fa-arrow-right ml-2"></i>
               </button>
             </div>
           </div>
@@ -346,7 +367,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
                 disabled={context.considering.length === 0}
                 className="px-8 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               >
-                Next <i className="fas fa-arrow-right ml-2"></i>
+                {t.builder.next} <i className="fas fa-arrow-right ml-2"></i>
               </button>
             </div>
           </div>

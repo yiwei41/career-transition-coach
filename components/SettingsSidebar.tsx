@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { SettingsPage } from './SettingsPage';
+import { useLanguage } from '../LanguageContext';
 
 interface SettingsSidebarProps {
   isOpen: boolean;
@@ -7,6 +8,8 @@ interface SettingsSidebarProps {
 }
 
 export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({ isOpen, onClose }) => {
+  const { t } = useLanguage();
+
   // Close on Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -48,7 +51,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({ isOpen, onClos
       >
         {/* Close Button */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-          <h2 className="text-xl font-bold text-gray-900">Settings</h2>
+          <h2 className="text-xl font-bold text-gray-900">{t.app.settings}</h2>
           <button
             onClick={onClose}
             className="w-10 h-10 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { UserContext, RoleCard } from '../types';
 import { generateRolePossibilities } from '../geminiService';
 import { StepLayout } from './StepLayout';
@@ -14,7 +14,7 @@ interface ExplorationPageProps {
   onBack?: () => void;
 }
 
-export const ExplorationPage: React.FC<ExplorationPageProps> = ({
+const ExplorationPageInner: React.FC<ExplorationPageProps> = ({
   context,
   cachedRoles,
   onRolesFetched,
@@ -36,21 +36,27 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({
   const [expandedAssumptions, setExpandedAssumptions] = useState(false);
   const [expandedUncertainties, setExpandedUncertainties] = useState(false);
 
-  const synthesisSteps = [
-    { id: 'context', label: 'CONTEXT DISTILLATION', progress: 20 },
-    { id: 'directional', label: 'DIRECTIONAL ANALYSIS', progress: 40 },
-    { id: 'possibility', label: 'POSSIBILITY MAPPING', progress: 60 },
-    { id: 'constraint', label: 'CONSTRAINT CHECKING', progress: 80 },
-    { id: 'role', label: 'ROLE SYNTHESIS', progress: 95 },
-  ];
+  const synthesisSteps = useMemo(
+    () => [
+      { id: 'context', label: 'CONTEXT DISTILLATION', progress: 20 },
+      { id: 'directional', label: 'DIRECTIONAL ANALYSIS', progress: 40 },
+      { id: 'possibility', label: 'POSSIBILITY MAPPING', progress: 60 },
+      { id: 'constraint', label: 'CONSTRAINT CHECKING', progress: 80 },
+      { id: 'role', label: 'ROLE SYNTHESIS', progress: 95 },
+    ],
+    []
+  );
 
-  const synthesisConsoleLogs = [
-    { text: 'QUERYING MARKET_TAXONOMY: PIVOT_PATH_ALPHA' },
-    { text: 'GENERATING HYPOTHESIS: ADJACENT_ROLE_MATCH', highlight: true },
-    { text: 'OPTIMIZING ASSET_REUSE_RATIO...' },
-    { text: `MAPPING CONTEXT: ${context.origin} → ${context.considering.join(', ')}` },
-    { text: 'FINALIZING ROLE RECOMMENDATIONS...' },
-  ];
+  const synthesisConsoleLogs = useMemo(
+    () => [
+      { text: 'QUERYING MARKET_TAXONOMY: PIVOT_PATH_ALPHA' },
+      { text: 'GENERATING HYPOTHESIS: ADJACENT_ROLE_MATCH', highlight: true },
+      { text: 'OPTIMIZING ASSET_REUSE_RATIO...' },
+      { text: `MAPPING CONTEXT: ${context.origin} → ${context.considering.join(', ')}` },
+      { text: 'FINALIZING ROLE RECOMMENDATIONS...' },
+    ],
+    [context.origin, context.considering]
+  );
 
   // Reset expanded state when switching roles
   useEffect(() => {
@@ -74,8 +80,8 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({
       setLoading(true);
       try {
         const res = await generateRolePossibilities(context);
-        // tiny minimum delay so loading animation doesn't flash
-        await new Promise((r) => setTimeout(r, 1200));
+        // brief minimum delay so loading animation doesn't flash
+        await new Promise((r) => setTimeout(r, 350));
         if (cancelled) return;
         setRoles(res);
         onRolesFetched(res);
@@ -154,7 +160,7 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({
               <button
                 key={role.id}
                 onClick={() => setSelectedRole(role)}
-                className="bg-white rounded-2xl border border-gray-200 p-5 text-left hover:border-indigo-300 hover:shadow-md transition-all"
+                className="bg-white rounded-2xl border border-gray-200 p-5 text-left hover:border-indigo-300 hover:shadow-md transition-colors transition-shadow duration-150"
               >
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <h3 className="text-lg font-bold text-gray-900">{role.name}</h3>
@@ -302,7 +308,7 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({
         <div className="pt-6 border-t border-gray-100 flex flex-col items-center gap-4">
           <button
             onClick={() => onSelectRole(selectedRole)}
-            className="w-full md:w-auto px-10 py-4 bg-indigo-600 text-white rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg"
+            className="w-full md:w-auto px-10 py-4 bg-indigo-600 text-white rounded-full font-bold hover:bg-indigo-700 transition-colors duration-200 shadow-lg"
           >
             Explore this role <i className="fas fa-arrow-right ml-2"></i>
           </button>
@@ -323,3 +329,5 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({
     </StepLayout>
   );
 };
+
+export const ExplorationPage = React.memo(ExplorationPageInner);

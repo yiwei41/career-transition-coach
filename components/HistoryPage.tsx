@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { HistoryRecord } from '../types';
 import { getHistoryRecords, deleteHistoryRecord, clearHistoryRecords } from '../historyService';
 import { StepLayout } from './StepLayout';
+import { useLanguage } from '../LanguageContext';
 
 interface HistoryPageProps {
   onSelectRecord?: (record: HistoryRecord) => void;
@@ -9,6 +10,7 @@ interface HistoryPageProps {
 }
 
 export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectRecord, onBack }) => {
+  const { t } = useLanguage();
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,14 +21,14 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectRecord, onBack
   }, []);
 
   const handleDelete = (recordId: string) => {
-    if (window.confirm('Are you sure you want to delete this record?')) {
+    if (window.confirm(t.history.deleteConfirm)) {
       deleteHistoryRecord(recordId);
       setHistory(getHistoryRecords());
     }
   };
 
   const handleClearAll = () => {
-    if (window.confirm('Are you sure you want to clear all history? This cannot be undone.')) {
+    if (window.confirm(t.history.clearAllConfirm)) {
       clearHistoryRecords();
       setHistory([]);
     }
@@ -40,11 +42,11 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectRecord, onBack
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    if (diffMins < 1) return t.history.justNow;
+    if (diffMins < 60) return `${diffMins} ${t.history.minutesAgo}`;
+    if (diffHours < 24) return `${diffHours} ${t.history.hoursAgo}`;
+    if (diffDays < 7) return `${diffDays} ${t.history.daysAgo}`;
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   if (loading) {
@@ -59,21 +61,21 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectRecord, onBack
 
   if (history.length === 0) {
     return (
-      <StepLayout title="History" subtitle="Your past career exploration sessions">
+      <StepLayout title={t.history.title} subtitle={t.history.subtitle}>
         <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center max-w-2xl mx-auto">
           <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-history text-2xl text-gray-400"></i>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">No history yet</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{t.history.noHistory}</h3>
           <p className="text-sm text-gray-500 mb-6">
-            Your completed career exploration sessions will appear here.
+            {t.history.noHistoryDesc}
           </p>
           {onBack && (
             <button
               onClick={onBack}
               className="px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-colors"
             >
-              Start exploring
+              {t.history.startExploring}
             </button>
           )}
         </div>
@@ -82,19 +84,19 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectRecord, onBack
   }
 
   return (
-    <StepLayout title="History" subtitle={`${history.length} past session${history.length > 1 ? 's' : ''}`}>
+    <StepLayout title={t.history.title} subtitle={`${history.length} ${history.length === 1 ? t.history.session : t.history.sessions}`}>
       <div className="space-y-4 max-w-4xl mx-auto">
         {/* Header Actions */}
         <div className="flex items-center justify-between mb-6">
           <div className="text-sm text-gray-500">
-            {history.length} record{history.length > 1 ? 's' : ''} found
+            {history.length} {history.length === 1 ? t.history.recordFound : t.history.recordsFound}
           </div>
           <button
             onClick={handleClearAll}
             className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-2"
           >
             <i className="fas fa-trash"></i>
-            Clear all
+            {t.history.clearAll}
           </button>
         </div>
 
@@ -125,7 +127,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectRecord, onBack
                         {record.completed && (
                           <span className="flex items-center gap-1 text-green-600">
                             <i className="fas fa-check-circle"></i>
-                            Completed
+                            {t.history.completed}
                           </span>
                         )}
                       </div>
@@ -184,7 +186,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectRecord, onBack
                       className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors flex items-center gap-2"
                     >
                       <i className="fas fa-eye"></i>
-                      View
+                      {t.history.view}
                     </button>
                   )}
                   <button
@@ -192,7 +194,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectRecord, onBack
                     className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center gap-2"
                   >
                     <i className="fas fa-trash"></i>
-                    Delete
+                    {t.history.delete}
                   </button>
                 </div>
               </div>

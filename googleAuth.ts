@@ -4,29 +4,49 @@ declare global {
   }
 }
 
+declare const __VITE_GOOGLE_CLIENT_ID__: string | undefined;
+
 function getGoogleClientId(): string | undefined {
-  // Prefer Vite's normal env injection, but fall back to the injected constant.
   return import.meta.env.VITE_GOOGLE_CLIENT_ID || __VITE_GOOGLE_CLIENT_ID__;
 }
 
-export function waitForGoogleScript(): Promise<void> {
+/** Load Google GSI script dynamically (avoids blocking initial page load) */
+export function loadGoogleScript(): Promise<void> {
+  if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
+    return Promise.resolve();
+  }
   return new Promise((resolve, reject) => {
-    if (window.google?.accounts?.id) {
-      resolve();
-      return;
-    }
-    let attempts = 0;
-    const checkInterval = setInterval(() => {
-      attempts++;
-      if (window.google?.accounts?.id) {
-        clearInterval(checkInterval);
-        resolve();
-      } else if (attempts > 50) {
-        clearInterval(checkInterval);
-        reject(new Error('Google Identity script failed to load'));
-      }
-    }, 100);
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Google script failed to load'));
+    document.head.appendChild(script);
   });
+}
+
+export function waitForGoogleScript(): Promise<void> {
+  return loadGoogleScript().then(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        if (window.google?.accounts?.id) {
+          resolve();
+          return;
+        }
+        let attempts = 0;
+        const checkInterval = setInterval(() => {
+          attempts++;
+          if (window.google?.accounts?.id) {
+            clearInterval(checkInterval);
+            resolve();
+          } else if (attempts > 50) {
+            clearInterval(checkInterval);
+            reject(new Error('Google Identity script failed to load'));
+          }
+        }, 100);
+      })
+  );
 }
 
 export function initializeGoogleSignIn(

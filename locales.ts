@@ -1,6 +1,30 @@
 export type Language = 'en' | 'zh-CN' | 'zh-TW';
 
 export interface Translations {
+  // App / Nav
+  app: {
+    intro: string;
+    context: string;
+    explore: string;
+    validate: string;
+    action: string;
+    resume: string;
+    guest: string;
+    settings: string;
+    history: string;
+    logout: string;
+    principles: string;
+    makeUncertaintyVisible: string;
+    testAssumptions: string;
+    allowExit: string;
+    transparencyOverAuthority: string;
+    loading: string;
+    errorTitle: string;
+    refresh: string;
+    preferencesAndAccount: string;
+    signOut: string;
+    signOutDesc: string;
+  };
   // Common
   common: {
     back: string;
@@ -43,6 +67,31 @@ export interface Translations {
     dataStorageDesc: string;
     googleLogin: string;
     googleLoginDesc: string;
+    clearHistoryConfirm: string;
+    noDataToExport: string;
+    googleAccount: string;
+    guestMode: string;
+    connected: string;
+    saved: string;
+  };
+  // Intro
+  intro: {
+    title: string;
+    subtitle: string;
+    description: string;
+    getStarted: string;
+  };
+  // Builder
+  builder: {
+    yourBackground: string;
+    pickOne: string;
+    content: string;
+    marketing: string;
+    operations: string;
+    data: string;
+    business: string;
+    mixedOther: string;
+    next: string;
   };
   // History
   history: {
@@ -51,17 +100,49 @@ export interface Translations {
     noHistory: string;
     noHistoryDesc: string;
     recordsFound: string;
+    recordFound: string;
     clearAll: string;
     view: string;
     delete: string;
     completed: string;
     sessions: string;
     session: string;
+    deleteConfirm: string;
+    clearAllConfirm: string;
+    startExploring: string;
+    loadingSessions: string;
+    justNow: string;
+    minutesAgo: string;
+    hoursAgo: string;
+    daysAgo: string;
   };
 }
 
 export const translations: Record<Language, Translations> = {
   'en': {
+    app: {
+      intro: 'Intro',
+      context: 'Context',
+      explore: 'Explore',
+      validate: 'Validate',
+      action: 'Action',
+      resume: 'Resume',
+      guest: 'Guest',
+      settings: 'Settings',
+      history: 'History',
+      logout: 'Log out',
+      principles: 'Principles',
+      makeUncertaintyVisible: 'Make uncertainty visible',
+      testAssumptions: 'Test assumptions, not people',
+      allowExit: 'Allow exit without penalty',
+      transparencyOverAuthority: 'Transparency over Authority',
+      loading: 'Loading…',
+      errorTitle: 'Something went wrong',
+      refresh: 'Refresh',
+      preferencesAndAccount: 'Preferences & account',
+      signOut: 'Sign out',
+      signOutDesc: 'Log out of your account',
+    },
     common: {
       back: 'Back',
       next: 'Next',
@@ -77,6 +158,23 @@ export const translations: Record<Language, Translations> = {
       googleSignIn: 'Continue with Google',
       guestContinue: 'Continue without an account',
       privacyNote: 'We only use your Google account to save your progress.',
+    },
+    intro: {
+      title: 'Coach.Ai',
+      subtitle: 'Your career transition companion',
+      description: 'Coach.Ai helps career transition job seekers make career decisions and generate their first resume.',
+      getStarted: 'Get Started',
+    },
+    builder: {
+      yourBackground: 'Your background',
+      pickOne: 'Pick one. Keep it simple.',
+      content: 'Content',
+      marketing: 'Marketing',
+      operations: 'Operations',
+      data: 'Data',
+      business: 'Business',
+      mixedOther: 'Mixed / Other',
+      next: 'Next',
     },
     settings: {
       title: 'Settings',
@@ -101,6 +199,13 @@ export const translations: Record<Language, Translations> = {
       dataStorageDesc: 'All your data is stored locally in your browser. We don\'t send your personal information to any external servers except for AI analysis (which is processed anonymously).',
       googleLogin: 'Google Login',
       googleLoginDesc: 'We only use your Google account to identify you and save your progress. We don\'t access your emails, contacts, or any other Google data.',
+      clearHistoryConfirm: 'Are you sure you want to clear all history? This cannot be undone.',
+      noDataToExport: 'No data to export.',
+      googleAccount: 'Google Account',
+      guestMode: 'Guest Mode',
+      connected: 'Connected',
+      guest: 'Guest',
+      saved: 'saved',
     },
     history: {
       title: 'History',
@@ -114,9 +219,40 @@ export const translations: Record<Language, Translations> = {
       completed: 'Completed',
       sessions: 'sessions',
       session: 'session',
+      deleteConfirm: 'Are you sure you want to delete this record?',
+      clearAllConfirm: 'Are you sure you want to clear all history? This cannot be undone.',
+      startExploring: 'Start exploring',
+      loadingSessions: 'Loading your past sessions...',
+      justNow: 'Just now',
+      minutesAgo: 'minute(s) ago',
+      hoursAgo: 'hour(s) ago',
+      daysAgo: 'day(s) ago',
     },
   },
   'zh-CN': {
+    app: {
+      intro: '介绍',
+      context: '背景',
+      explore: '探索',
+      validate: '验证',
+      action: '行动',
+      resume: '简历',
+      guest: '访客',
+      settings: '设置',
+      history: '历史',
+      logout: '退出登录',
+      principles: '原则',
+      makeUncertaintyVisible: '让不确定性可见',
+      testAssumptions: '验证假设，而非人',
+      allowExit: '允许无惩罚退出',
+      transparencyOverAuthority: '透明优于权威',
+      loading: '加载中…',
+      errorTitle: '加载出错',
+      refresh: '刷新',
+      preferencesAndAccount: '偏好与账户',
+      signOut: '退出登录',
+      signOutDesc: '退出您的账户',
+    },
     common: {
       back: '返回',
       next: '下一步',
@@ -132,6 +268,23 @@ export const translations: Record<Language, Translations> = {
       googleSignIn: '使用 Google 账号登录',
       guestContinue: '不使用账号继续',
       privacyNote: '我们仅使用您的 Google 账号来保存您的进度。',
+    },
+    intro: {
+      title: 'Coach.Ai',
+      subtitle: '您的职业转型伙伴',
+      description: 'Coach.Ai 帮助转型求职者做职业判断，生成第一份简历。',
+      getStarted: '开始',
+    },
+    builder: {
+      yourBackground: '您的背景',
+      pickOne: '选一个，简单即可。',
+      content: '内容',
+      marketing: '营销',
+      operations: '运营',
+      data: '数据',
+      business: '商业',
+      mixedOther: '混合 / 其他',
+      next: '下一步',
     },
     settings: {
       title: '设置',
@@ -156,6 +309,13 @@ export const translations: Record<Language, Translations> = {
       dataStorageDesc: '您的所有数据都存储在本地浏览器中。除了 AI 分析（匿名处理）外，我们不会将您的个人信息发送到任何外部服务器。',
       googleLogin: 'Google 登录',
       googleLoginDesc: '我们仅使用您的 Google 账号来识别您并保存您的进度。我们不会访问您的电子邮件、联系人或任何其他 Google 数据。',
+      clearHistoryConfirm: '确定要清空所有历史吗？此操作无法撤销。',
+      noDataToExport: '暂无数据可导出。',
+      googleAccount: 'Google 账号',
+      guestMode: '访客模式',
+      connected: '已连接',
+      guest: '访客',
+      saved: '已保存',
     },
     history: {
       title: '历史记录',
@@ -163,6 +323,7 @@ export const translations: Record<Language, Translations> = {
       noHistory: '暂无历史记录',
       noHistoryDesc: '您完成的职业探索会话将显示在这里。',
       recordsFound: '条记录',
+      recordFound: '条记录',
       clearAll: '清空全部',
       view: '查看',
       delete: '删除',
@@ -172,6 +333,29 @@ export const translations: Record<Language, Translations> = {
     },
   },
   'zh-TW': {
+    app: {
+      intro: '介紹',
+      context: '背景',
+      explore: '探索',
+      validate: '驗證',
+      action: '行動',
+      resume: '履歷',
+      guest: '訪客',
+      settings: '設定',
+      history: '歷史',
+      logout: '登出',
+      principles: '原則',
+      makeUncertaintyVisible: '讓不確定性可見',
+      testAssumptions: '驗證假設，而非人',
+      allowExit: '允許無懲罰退出',
+      transparencyOverAuthority: '透明優於權威',
+      loading: '載入中…',
+      errorTitle: '載入出錯',
+      refresh: '重新整理',
+      preferencesAndAccount: '偏好與帳戶',
+      signOut: '登出',
+      signOutDesc: '登出您的帳戶',
+    },
     common: {
       back: '返回',
       next: '下一步',
@@ -187,6 +371,23 @@ export const translations: Record<Language, Translations> = {
       googleSignIn: '使用 Google 帳號登入',
       guestContinue: '不使用帳號繼續',
       privacyNote: '我們僅使用您的 Google 帳號來儲存您的進度。',
+    },
+    intro: {
+      title: 'Coach.Ai',
+      subtitle: '您的職業轉型夥伴',
+      description: 'Coach.Ai 幫助轉型求職者做職業判斷，生成第一份履歷。',
+      getStarted: '開始',
+    },
+    builder: {
+      yourBackground: '您的背景',
+      pickOne: '選一個，簡單即可。',
+      content: '內容',
+      marketing: '行銷',
+      operations: '營運',
+      data: '資料',
+      business: '商業',
+      mixedOther: '混合 / 其他',
+      next: '下一步',
     },
     settings: {
       title: '設定',
@@ -211,6 +412,13 @@ export const translations: Record<Language, Translations> = {
       dataStorageDesc: '您的所有資料都儲存在本地瀏覽器中。除了 AI 分析（匿名處理）外，我們不會將您的個人資訊傳送到任何外部伺服器。',
       googleLogin: 'Google 登入',
       googleLoginDesc: '我們僅使用您的 Google 帳號來識別您並儲存您的進度。我們不會存取您的電子郵件、聯絡人或任何其他 Google 資料。',
+      clearHistoryConfirm: '確定要清除所有歷史嗎？此操作無法復原。',
+      noDataToExport: '尚無資料可匯出。',
+      googleAccount: 'Google 帳號',
+      guestMode: '訪客模式',
+      connected: '已連線',
+      guest: '訪客',
+      saved: '已儲存',
     },
     history: {
       title: '歷史記錄',
@@ -218,12 +426,21 @@ export const translations: Record<Language, Translations> = {
       noHistory: '尚無歷史記錄',
       noHistoryDesc: '您完成的職業探索會話將顯示在這裡。',
       recordsFound: '筆記錄',
+      recordFound: '筆記錄',
       clearAll: '清除全部',
       view: '查看',
       delete: '刪除',
       completed: '已完成',
       sessions: '個會話',
       session: '個會話',
+      deleteConfirm: '確定要刪除這筆記錄嗎？',
+      clearAllConfirm: '確定要清除所有歷史嗎？此操作無法復原。',
+      startExploring: '開始探索',
+      loadingSessions: '正在載入您的歷史會話...',
+      justNow: '剛剛',
+      minutesAgo: '分鐘前',
+      hoursAgo: '小時前',
+      daysAgo: '天前',
     },
   },
 };

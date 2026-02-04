@@ -1,28 +1,94 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { RoleCard, SkillMapping, UserExperienceInput } from '../types';
 import { StepLayout } from './StepLayout';
+import { extractTextFromFile } from '../fileExtract';
+
+const ACCEPTED_TYPES = '.pdf,.doc,.docx,.txt';
+const ACCEPTED_EXT = ['pdf', 'doc', 'docx', 'txt'];
+
+const emptyForm: UserExperienceInput = {
+  rawExperience: '',
+  fullName: '',
+  contactEmail: '',
+  linkedIn: ''
+};
 
 interface ResumeFormPageProps {
   role: RoleCard;
   skills: SkillMapping[];
+  initialData?: UserExperienceInput;
   onNext: (input: UserExperienceInput) => void;
   onBack: () => void;
 }
 
-export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, onNext, onBack }) => {
-  const [formData, setFormData] = useState<UserExperienceInput>({
-    rawExperience: '',
-    contactEmail: '',
-    linkedIn: ''
-  });
+export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, initialData, onNext, onBack }) => {
+  const hasExistingContent = !!(initialData?.rawExperience?.trim());
+  const [mode, setMode] = useState<'choice' | 'edit' | 'fresh'>(
+    hasExistingContent ? 'choice' : 'edit'
+  );
+  const [formData, setFormData] = useState<UserExperienceInput>(() =>
+    hasExistingContent ? { ...emptyForm, ...initialData } : emptyForm
+  );
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const highConfidenceSkills = skills.filter(s => s.confidence === 'high');
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!ACCEPTED_EXT.includes(ext)) {
+      setUploadError('Please upload PDF, Word (.doc/.docx), or TXT format');
+      return;
+    }
+    setUploadError(null);
+    setUploading(true);
+    setUploadedFileName(null);
+    try {
+      const text = await extractTextFromFile(file);
+      setFormData(prev => ({ ...prev, rawExperience: text }));
+      setUploadedFileName(file.name);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Failed to parse file');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!ACCEPTED_EXT.includes(ext)) {
+      setUploadError('Please upload PDF, Word (.doc/.docx), or TXT format');
+      return;
+    }
+    const input = fileInputRef.current;
+    if (input) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onNext(formData);
   };
+
+  const showForm = mode !== 'choice';
 
   return (
     <StepLayout 
@@ -31,11 +97,100 @@ export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, on
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
+          {mode === 'choice' && (
+            <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
+              <h3 className="text-sm font-black text-gray-700 uppercase tracking-widest mb-3">
+                You have previously submitted content
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Choose how you'd like to continue:
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...emptyForm, ...initialData });
+                    setMode('edit');
+                  }}
+                  className="flex-1 p-6 rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100/50 hover:border-indigo-300 transition-all text-left group"
+                >
+                  <i className="fas fa-edit text-indigo-600 text-xl mb-2 block"></i>
+                  <span className="font-bold text-gray-900 block mb-1">Edit existing content</span>
+                  <span className="text-xs text-gray-600">
+                    View and modify your previously uploaded resume content
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData(emptyForm);
+                    setUploadedFileName(null);
+                    setMode('fresh');
+                  }}
+                  className="flex-1 p-6 rounded-2xl border-2 border-dashed border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all text-left group"
+                >
+                  <i className="fas fa-plus-circle text-gray-400 text-xl mb-2 block"></i>
+                  <span className="font-bold text-gray-900 block mb-1">Start fresh</span>
+                  <span className="text-xs text-gray-600">
+                    Clear everything and upload or paste new content
+                  </span>
+                </button>
+              </div>
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <button type="button" onClick={onBack} className="text-sm text-gray-500 font-bold hover:text-gray-900">
+                  ← Back
+                </button>
+              </div>
+            </div>
+          )}
+
+          {showForm && (
           <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-6">
             <div>
               <label className="block text-sm font-black text-gray-700 uppercase tracking-widest mb-2">
                 Resume Content / Experience
               </label>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_TYPES}
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <div
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onClick={() => fileInputRef.current?.click()}
+                className="mb-4 p-6 rounded-2xl border-2 border-dashed border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/30 cursor-pointer transition-all flex flex-col items-center justify-center gap-2 text-gray-500"
+              >
+                {uploading ? (
+                  <span className="flex items-center gap-2 text-indigo-600">
+                    <i className="fas fa-spinner fa-spin"></i>
+                    Parsing file…
+                  </span>
+                ) : (
+                  <>
+                    <i className="fas fa-cloud-upload-alt text-2xl text-indigo-400"></i>
+                    <span className="text-sm font-medium">
+                      Click or drag to upload resume (PDF, Word, TXT)
+                    </span>
+                    {uploadedFileName && (
+                      <span className="text-xs text-green-600">
+                        <i className="fas fa-check-circle mr-1"></i>
+                        Imported: {uploadedFileName}
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+              {uploadError && (
+                <p className="mb-3 text-sm text-red-500">
+                  <i className="fas fa-exclamation-circle mr-1"></i>
+                  {uploadError}
+                </p>
+              )}
+
               <textarea 
                 required
                 value={formData.rawExperience}
@@ -49,7 +204,18 @@ export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, on
               </div>
             </div>
 
-            <div className="pt-6 border-t border-gray-50 flex flex-col md:flex-row gap-4">
+            <div className="pt-6 border-t border-gray-50 space-y-4">
+               <div>
+                 <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Full Name (for resume header)</label>
+                 <input 
+                  type="text"
+                  value={formData.fullName || ''}
+                  onChange={e => setFormData({...formData, fullName: e.target.value})}
+                  placeholder="e.g. Jane Smith"
+                  className="w-full p-3 rounded-lg border border-gray-100 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                 />
+               </div>
+               <div className="flex flex-col md:flex-row gap-4">
                <div className="flex-1">
                  <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Contact Email (Optional)</label>
                  <input 
@@ -70,25 +236,42 @@ export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, on
                   className="w-full p-3 rounded-lg border border-gray-100 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
                  />
                </div>
+               </div>
             </div>
 
-            <div className="pt-4 flex justify-between items-center">
-              <button 
-                type="button"
-                onClick={onBack}
-                className="px-6 py-2 text-gray-500 font-bold hover:text-gray-900 transition-colors"
-              >
-                Back
-              </button>
+            <div className="pt-4 flex flex-wrap justify-between items-center gap-3">
+              <div className="flex items-center gap-4">
+                <button 
+                  type="button"
+                  onClick={onBack}
+                  className="px-6 py-2 text-gray-500 font-bold hover:text-gray-900 transition-colors"
+                >
+                  Back
+                </button>
+                {mode === 'edit' && hasExistingContent && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(emptyForm);
+                      setUploadedFileName(null);
+                      setMode('fresh');
+                    }}
+                    className="text-sm text-gray-500 hover:text-indigo-600 font-medium"
+                  >
+                    Start fresh instead
+                  </button>
+                )}
+              </div>
               <button 
                 type="submit"
                 className="px-8 py-4 bg-indigo-600 text-white rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2 group"
               >
-                Generate Bridge Narrative
+                Generate Customized Resume
                 <i className="fas fa-magic transition-transform group-hover:rotate-12"></i>
               </button>
             </div>
           </form>
+          )}
         </div>
 
         <div className="space-y-6">
