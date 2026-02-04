@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { UserContext, AIPreview } from '../types';
 import { generateAIUnderstanding } from '../geminiService';
 import { StepLayout } from './StepLayout';
@@ -20,11 +20,16 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
     frictionPoints: [],
     frictionText: '',
   });
+
+  const [customOrigin, setCustomOrigin] = useState('');
+  const [cluster, setCluster] = useState<'product' | 'data' | 'business'>('product');
+
   const [loading, setLoading] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<AIPreview | null>(null);
-  const [customOrigin, setCustomOrigin] = useState('');
+
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const contextSteps = [
     { id: 'parse', label: 'CONTEXT PARSING', progress: 25 },
@@ -50,9 +55,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
     { id: 'Mixed', label: 'Mixed / Other', icon: 'fa-layer-group' },
   ];
 
-  type RoleCluster = 'product' | 'data' | 'business';
-  const [cluster, setCluster] = useState<RoleCluster>('product');
-  const roleClusters: Record<RoleCluster, { label: string; icon: string; roles: string[] }> = {
+  const roleClusters: Record<'product' | 'data' | 'business', { label: string; icon: string; roles: string[] }> = {
     product: {
       label: 'Product-ish',
       icon: 'fa-cubes',
@@ -78,57 +81,72 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
     { id: 'Not sure yet', label: 'Not sure yet', icon: 'fa-question' },
   ];
 
+  const selectedFriction = context.frictionPoints[0] || '';
+
   const handleToggleConsidering = (val: string) => {
-    setContext(prev => ({
+    setContext((prev) => ({
       ...prev,
-      considering: prev.considering.includes(val) 
-        ? prev.considering.filter(i => i !== val) 
+      considering: prev.considering.includes(val)
+        ? prev.considering.filter((i) => i !== val)
         : prev.considering.length >= 3
           ? [...prev.considering.slice(1), val] // Max 3 (drop oldest)
-          : [...prev.considering, val]
+          : [...prev.considering, val],
     }));
   };
 
   const handleSelectFriction = (val: string) => {
-    setContext(prev => ({
+    setContext((prev) => ({
       ...prev,
       frictionPoints: val ? [val] : [],
     }));
   };
 
+  const getFinalContext = (): UserContext => {
+    const finalOrigin =
+      context.origin === 'Mixed' && customOrigin.trim() ? customOrigin.trim() : context.origin;
+
+    return {
+      ...context,
+      origin: finalOrigin,
+    };
+  };
+
   const handleGeneratePreview = async () => {
     setError(null);
-    if (!context.origin || context.considering.length === 0) {
+
+    const finalContext = getFinalContext();
+    if (!finalContext.origin || finalContext.considering.length === 0) {
       setError('Please complete the previous steps: select your background and at least one target role.');
       return;
     }
-    if (!selectedFriction) {
+    if (!finalContext.frictionPoints[0]) {
       setError('Please select your biggest friction point above.');
       return;
     }
+
     setLoading(true);
     setAnalysisStep(0);
     try {
-      const res = await generateAIUnderstanding(context);
+      const res = await generateAIUnderstanding(finalContext);
       setPreview(res);
       setStep('preview');
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
     } catch (err) {
       console.error(err);
       let msg = 'Analysis failed. Please try again.';
-      // Extract message from various error formats
+
       let errStr = '';
-      if (err instanceof Error) {
-        errStr = err.message;
-      } else if (err && typeof err === 'object') {
+      if (err instanceof Error) errStr = err.message;
+      else if (err && typeof err === 'object') {
         const o = err as Record<string, unknown>;
         errStr = [o.message, o.error, o.details, o.statusMessage]
           .filter(Boolean)
           .map((x) => (typeof x === 'string' ? x : JSON.stringify(x)))
           .join(' ');
-      } else {
-        errStr = String(err ?? '');
-      }
-      // Check for quota/rate limit errors
+      } else errStr = String(err ?? '');
+
       if (/429|quota|RESOURCE_EXHAUSTED|limit.*0|exceeded/i.test(errStr)) {
         msg = 'API 配额已用尽，请稍后再试';
       } else if (/401|API key|invalid|unauthorized/i.test(errStr)) {
@@ -153,9 +171,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
       });
     }, 1200);
     return () => clearInterval(stepInterval);
-  }, [loading, contextSteps.length]);
-
-  const selectedFriction = context.frictionPoints[0] || '';
+  }, [loading]);
 
   if (loading) {
     const activeProgress = 40 + (analysisStep % 4) * 20;
@@ -176,18 +192,24 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
   }
 
   return (
-    <StepLayout 
+    <StepLayout
       title={
-        step === 'origin' ? 'Your background' :
-        step === 'target_roles' ? 'Target roles' :
-        step === 'friction' ? 'Biggest friction' :
-        'Quick scan'
+        step === 'origin'
+          ? 'Your background'
+          : step === 'target_roles'
+            ? 'Target roles'
+            : step === 'friction'
+              ? 'Biggest friction'
+              : 'Quick scan'
       }
       subtitle={
-        step === 'origin' ? 'Pick one. Keep it simple.' :
-        step === 'target_roles' ? 'Pick up to 3. You can change later.' :
-        step === 'friction' ? 'Pick one. Optional: add your words.' :
-        'We’ll label what’s clear and what’s uncertain.'
+        step === 'origin'
+          ? 'Pick one. Keep it simple.'
+          : step === 'target_roles'
+            ? 'Pick up to 3. You can change later.'
+            : step === 'friction'
+              ? 'Pick one. Optional: add your words.'
+              : 'We’ll label what’s clear and what’s uncertain.'
       }
     >
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
@@ -195,17 +217,14 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
         {step === 'origin' && (
           <div className="space-y-8">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {origins.map(opt => {
+              {origins.map((opt) => {
                 const selected = context.origin === opt.id;
                 return (
                   <button
                     key={opt.id}
                     onClick={() => {
-                      setContext(prev => ({ ...prev, origin: opt.id }));
-                      // Clear custom input if switching away from Mixed
-                      if (opt.id !== 'Mixed') {
-                        setCustomOrigin('');
-                      }
+                      setContext((prev) => ({ ...prev, origin: opt.id }));
+                      if (opt.id !== 'Mixed') setCustomOrigin('');
                     }}
                     className={[
                       'rounded-2xl border p-4 text-left transition-all',
@@ -214,7 +233,11 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
                     ].join(' ')}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          selected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
                         <i className={`fas ${opt.icon}`}></i>
                       </div>
                       <div className={`font-bold ${selected ? 'text-indigo-700' : 'text-gray-900'}`}>{opt.label}</div>
@@ -224,7 +247,6 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
               })}
             </div>
 
-            {/* Custom input for Mixed / Other */}
             {context.origin === 'Mixed' && (
               <div className="mt-4">
                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
@@ -237,20 +259,16 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
                   value={customOrigin}
                   onChange={(e) => setCustomOrigin(e.target.value)}
                 />
-                <p className="mt-2 text-xs text-gray-400">
-                  Describe your background in a few words
-                </p>
+                <p className="mt-2 text-xs text-gray-400">Describe your background in a few words</p>
               </div>
             )}
 
             <div className="pt-6 border-t border-gray-100 flex items-center justify-end">
               <button
                 onClick={() => {
-                  // Use custom input if provided, otherwise use 'Mixed'
-                  const finalOrigin = context.origin === 'Mixed' && customOrigin.trim() 
-                    ? customOrigin.trim() 
-                    : context.origin;
-                  setContext(prev => ({ ...prev, origin: finalOrigin }));
+                  const finalOrigin =
+                    context.origin === 'Mixed' && customOrigin.trim() ? customOrigin.trim() : context.origin;
+                  setContext((prev) => ({ ...prev, origin: finalOrigin }));
                   setStep('target_roles');
                 }}
                 disabled={!context.origin}
@@ -270,7 +288,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
                 Selected: <span className="font-bold text-gray-900">{context.considering.length}</span>/3
               </div>
               <div className="flex gap-2">
-                {(Object.keys(roleClusters) as RoleCluster[]).map(k => {
+                {(['product', 'data', 'business'] as const).map((k) => {
                   const selected = cluster === k;
                   return (
                     <button
@@ -278,7 +296,9 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
                       onClick={() => setCluster(k)}
                       className={[
                         'px-4 py-2 rounded-full text-sm font-bold border transition-all',
-                        selected ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300',
+                        selected
+                          ? 'bg-gray-900 text-white border-gray-900'
+                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300',
                       ].join(' ')}
                     >
                       <i className={`fas ${roleClusters[k].icon} mr-2`}></i>
@@ -290,7 +310,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {roleClusters[cluster].roles.map(role => {
+              {roleClusters[cluster].roles.map((role) => {
                 const selected = context.considering.includes(role);
                 return (
                   <button
@@ -304,7 +324,11 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className={`font-bold ${selected ? 'text-indigo-700' : 'text-gray-900'}`}>{role}</div>
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                      <div
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          selected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-400'
+                        }`}
+                      >
                         <i className={`fas ${selected ? 'fa-check' : 'fa-plus'}`}></i>
                       </div>
                     </div>
@@ -314,10 +338,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
             </div>
 
             <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
-              <button
-                onClick={() => setStep('origin')}
-                className="px-5 py-2 text-gray-600 hover:text-gray-900 font-bold"
-              >
+              <button onClick={() => setStep('origin')} className="px-5 py-2 text-gray-600 hover:text-gray-900 font-bold">
                 <i className="fas fa-arrow-left mr-2"></i> Back
               </button>
               <button
@@ -333,9 +354,9 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
 
         {/* FRICTION */}
         {step === 'friction' && (
-          <div className="space-y-8">
+          <div className="space-y-8" ref={resultsRef}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {frictionCards.map(card => {
+              {frictionCards.map((card) => {
                 const selected = selectedFriction === card.id;
                 return (
                   <button
@@ -348,7 +369,11 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
                     ].join(' ')}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          selected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
                         <i className={`fas ${card.icon}`}></i>
                       </div>
                       <div className={`font-bold ${selected ? 'text-indigo-700' : 'text-gray-900'}`}>{card.label}</div>
@@ -359,40 +384,29 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
-                Optional note
-              </label>
+              <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Optional note</label>
               <textarea
                 placeholder="Add a quick detail (optional)…"
                 className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm"
                 rows={3}
                 value={context.frictionText}
-                onChange={(e) => setContext(prev => ({ ...prev, frictionText: e.target.value }))}
+                onChange={(e) => setContext((prev) => ({ ...prev, frictionText: e.target.value }))}
               />
-              <p className="mt-2 text-xs text-gray-400">
-                Short is fine. We’ll refine later.
-              </p>
+              <p className="mt-2 text-xs text-gray-400">Short is fine. We’ll refine later.</p>
             </div>
 
             {error && (
               <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2">
                 <i className="fas fa-exclamation-circle mt-0.5 flex-shrink-0"></i>
                 <span>{error}</span>
-                <button
-                  onClick={() => setError(null)}
-                  className="ml-auto text-red-500 hover:text-red-700"
-                  aria-label="Dismiss"
-                >
+                <button onClick={() => setError(null)} className="ml-auto text-red-500 hover:text-red-700" aria-label="Dismiss">
                   <i className="fas fa-times"></i>
                 </button>
               </div>
             )}
 
             <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
-              <button
-                onClick={() => setStep('target_roles')}
-                className="px-5 py-2 text-gray-600 hover:text-gray-900 font-bold"
-              >
+              <button onClick={() => setStep('target_roles')} className="px-5 py-2 text-gray-600 hover:text-gray-900 font-bold">
                 <i className="fas fa-arrow-left mr-2"></i> Back
               </button>
               <button
@@ -400,7 +414,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
                 disabled={loading || !context.origin || context.considering.length === 0 || !selectedFriction}
                 className="px-8 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               >
-                {loading ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-wand-magic-sparkles mr-2"></i>}
+                <i className="fas fa-wand-magic-sparkles mr-2"></i>
                 Analyze
               </button>
             </div>
@@ -413,23 +427,18 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
             <QuickScanCharts preview={preview} />
 
             <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
-              <button
-                onClick={() => setStep('friction')}
-                className="px-5 py-2 text-gray-600 hover:text-gray-900 font-bold"
-              >
+              <button onClick={() => setStep('friction')} className="px-5 py-2 text-gray-600 hover:text-gray-900 font-bold">
                 <i className="fas fa-arrow-left mr-2"></i> Back
               </button>
               <button
-                onClick={() => onNext(context, preview)}
+                onClick={() => onNext(getFinalContext(), preview)}
                 className="px-10 py-4 bg-gray-900 text-white rounded-full font-bold hover:bg-black transition-all shadow-xl"
               >
                 Continue <i className="fas fa-arrow-right ml-2"></i>
               </button>
             </div>
 
-            <p className="text-xs text-gray-400 text-center">
-              Reassurance: you can change any selection later.
-            </p>
+            <p className="text-xs text-gray-400 text-center">Reassurance: you can change any selection later.</p>
           </div>
         )}
       </div>

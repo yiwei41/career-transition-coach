@@ -1,7 +1,11 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+<<<<<<< HEAD
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+=======
+import { GoogleOAuthProvider } from '@react-oauth/google';
+>>>>>>> main
 import App from './App';
 import AuthPage from './AuthPage';
 
@@ -22,9 +26,12 @@ if (!rootElement) {
   throw new Error('Could not find root element to mount to');
 }
 
+const googleClientId = process.env.GOOGLE_CLIENT_ID || '';
+
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
+<<<<<<< HEAD
     <BrowserRouter>
       <Routes>
         <Route path="/auth" element={<AuthRoute />} />
@@ -33,6 +40,11 @@ root.render(
         <Route path="*" element={<Navigate to="/auth" replace />} />
       </Routes>
     </BrowserRouter>
+=======
+    <GoogleOAuthProvider clientId={googleClientId}>
+    <App />
+    </GoogleOAuthProvider>
+>>>>>>> main
   </React.StrictMode>
 );
 

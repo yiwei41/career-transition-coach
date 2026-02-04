@@ -12,6 +12,8 @@
     "@google/genai": "^1.38.0",
     "mammoth": "^1.11.0",
     "pdfjs-dist": "^5.4.624",
+    "@react-oauth/google": "^0.13.4",
+    "@supabase/supabase-js": "^2.93.3",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-router-dom": "^6.30.3"
@@ -23,3 +25,5 @@
     "vite": "^6.2.0"
   }
 }
+
+  

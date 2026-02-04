@@ -3,70 +3,85 @@ import React, { useEffect, useState } from 'react';
 import { UserContext, RoleCard, SkillMapping, AIPreview } from '../types';
 import { generateSkillMapping } from '../geminiService';
 import { StepLayout } from './StepLayout';
-import { AnalysisProgressDisplay } from './AnalysisProgressDisplay';
 
 interface ValidationPageProps {
   role: RoleCard;
   context: UserContext;
   preview: AIPreview;
-  onNext: (skills: SkillMapping[]) => void;
+  cachedSkills: SkillMapping[] | undefined;
+  onSkillsUpdate: (skills: SkillMapping[]) => void;
+  onNext: () => void;
   onBack: () => void;
 }
 
-export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, preview, onNext, onBack }) => {
-  const [skills, setSkills] = useState<SkillMapping[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [analysisStep, setAnalysisStep] = useState(0);
+const ANALYSIS_STEPS = [
+  { id: 1, label: 'Deconstructing Role', icon: 'fa-layer-group', description: 'Breaking down market expectations for this position...' },
+  { id: 2, label: 'Scanning Background', icon: 'fa-id-badge', description: 'Identifying hidden transferable assets in your origin story...' },
+  { id: 3, label: 'Standardizing Context', icon: 'fa-bridge', description: 'Translating your experience into industry-standard terms...' },
+  { id: 4, label: 'Gap Identification', icon: 'fa-magnifying-glass-chart', description: 'Mapping assumptions against critical role requirements...' },
+  { id: 5, label: 'Finalizing Bridge', icon: 'fa-check-double', description: 'Preparing your validation dashboard...' },
+];
+
+export const ValidationPage: React.FC<ValidationPageProps> = ({
+  role,
+  context,
+  preview, // 目前未使用，但保留 props 以兼容其他调用处
+  cachedSkills,
+  onSkillsUpdate,
+  onNext,
+  onBack,
+}) => {
+  const [skills, setSkills] = useState<SkillMapping[]>(cachedSkills || []);
+  const [loading, setLoading] = useState(!cachedSkills);
+  const [activeStep, setActiveStep] = useState(0);
+
   const [filter, setFilter] = useState<'all' | 'high' | 'unsure' | 'gap'>('all');
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
-  const validationSteps = [
-    { id: 'deconstruct', label: 'DECONSTRUCTING ROLE', progress: 20 },
-    { id: 'scan', label: 'SCANNING BACKGROUND', progress: 40 },
-    { id: 'standardize', label: 'STANDARDIZING CONTEXT', progress: 60 },
-    { id: 'gap', label: 'GAP IDENTIFICATION', progress: 80 },
-    { id: 'bridge', label: 'FINALIZING BRIDGE', progress: 95 },
-  ];
-
-  const validationConsoleLogs = [
-    { text: 'NEURAL BRIDGE CONNECTION: ESTABLISHED' },
-    { text: 'success: context_sync_complete', highlight: true },
-    { text: `MAPPING SKILLS FOR: ${role.name}` },
-    { text: 'CROSS-REFERENCING BACKGROUND ASSUMPTIONS...' },
-    { text: 'FINALIZING VALIDATION MATRIX...' },
-  ];
-
   useEffect(() => {
-    const fetchSkills = async () => {
-      try {
-        const res = await generateSkillMapping(role, context);
-        setSkills(res);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+    let stepInterval: number | undefined;
+
+    if (loading) {
+      stepInterval = window.setInterval(() => {
+        setActiveStep((prev) => (prev < ANALYSIS_STEPS.length - 1 ? prev + 1 : prev));
+      }, 1500);
+    }
+
+    if (!cachedSkills) {
+      const fetchSkills = async () => {
+        try {
+          const res = await generateSkillMapping(role, context);
+          // 给 loading 动画一点展示时间（可删）
+          await new Promise((resolve) => setTimeout(resolve, 1200));
+          setSkills(res);
+          onSkillsUpdate(res);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+          if (stepInterval) clearInterval(stepInterval);
+        }
+      };
+      fetchSkills();
+    } else {
+      // cachedSkills 存在时，确保 loading 关掉
+      setLoading(false);
+      if (stepInterval) clearInterval(stepInterval);
+    }
+
+    return () => {
+      if (stepInterval) clearInterval(stepInterval);
     };
-    fetchSkills();
-  }, [role, context]);
-
-  useEffect(() => {
-    if (!loading) return;
-    const stepInterval = setInterval(() => {
-      setAnalysisStep((prev) => {
-        const next = prev + 1;
-        return next >= validationSteps.length ? prev : next;
-      });
-    }, 1800);
-    return () => clearInterval(stepInterval);
-  }, [loading, validationSteps.length]);
+  }, [role, context, cachedSkills, onSkillsUpdate, loading]);
 
   const updateConfidence = (index: number, confidence: 'high' | 'unsure' | 'gap') => {
-    setSkills(prev => prev.map((s, i) => i === index ? { ...s, confidence } : s));
+    const updated = skills.map((s, i) => (i === index ? { ...s, confidence } : s));
+    setSkills(updated);
+    onSkillsUpdate(updated);
   };
 
   const toggleExpanded = (index: number) => {
-    setExpanded(prev => {
+    setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(index)) next.delete(index);
       else next.add(index);
@@ -75,20 +90,80 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, p
   };
 
   if (loading) {
-    const activeProgress = 50 + (analysisStep % 3) * 20;
     return (
-      <StepLayout title="" subtitle="">
-        <AnalysisProgressDisplay
-          title="Analysis Engine Active"
-          subtitle="Preparing your validation dashboard..."
-          steps={validationSteps}
-          currentStepIndex={analysisStep}
-          activeStepProgress={activeProgress}
-          consoleTitle="NEURAL BRIDGE CONNECTION"
-          consoleLogs={validationConsoleLogs}
-          activeStatus="PROCESSING"
-        />
-      </StepLayout>
+      <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <div className="w-full max-w-xl">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-indigo-50 text-indigo-600 mb-6 relative overflow-hidden">
+              <i className={`fas ${ANALYSIS_STEPS[activeStep].icon} text-3xl z-10 animate-bounce`}></i>
+              <div className="absolute inset-0 bg-indigo-100/50 animate-pulse"></div>
+            </div>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Analysis Engine Active</h2>
+            <p className="text-gray-500 italic">{ANALYSIS_STEPS[activeStep].description}</p>
+          </div>
+
+          <div className="space-y-6">
+            {ANALYSIS_STEPS.map((step, idx) => (
+              <div
+                key={step.id}
+                className={`flex items-center gap-4 transition-all duration-500 ${
+                  idx === activeStep ? 'scale-100 opacity-100' : idx < activeStep ? 'opacity-50 scale-95' : 'opacity-20 scale-90'
+                }`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                    idx <= activeStep ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-200 text-gray-300'
+                  }`}
+                >
+                  {idx < activeStep ? <i className="fas fa-check text-xs"></i> : <span className="text-xs font-bold">{step.id}</span>}
+                </div>
+                <div className="flex-grow">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className={`text-sm font-bold uppercase tracking-widest ${idx === activeStep ? 'text-indigo-600' : 'text-gray-500'}`}>
+                      {step.label}
+                    </span>
+                    {idx === activeStep && (
+                      <span className="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded font-black animate-pulse">PROCESSING</span>
+                    )}
+                  </div>
+                  <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full bg-indigo-600 transition-all duration-1000 ease-out ${
+                        idx === activeStep ? 'w-1/2' : idx < activeStep ? 'w-full' : 'w-0'
+                      }`}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-12 p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <div className="flex items-center gap-3 text-[10px] font-mono text-gray-400 uppercase tracking-widest">
+              <span className="flex h-2 w-2 rounded-full bg-green-500"></span>
+              Neural Bridge Connection: Established
+            </div>
+            <div className="mt-2 h-16 overflow-hidden relative">
+              <div className="text-[10px] font-mono text-indigo-400/60 space-y-1 animate-[slideUp_10s_linear_infinite]">
+                <p>&gt; fetch market_data --role="{role.name}"</p>
+                <p>&gt; parsing experience_summary --origin="{context.origin}"</p>
+                <p>&gt; cross_referencing skills[transferable]</p>
+                <p>&gt; weighting uncertainty_factors...</p>
+                <p>&gt; mapping evidence_nodes...</p>
+                <p>&gt; generating bridge_narrative_matrix...</p>
+                <p>&gt; success: context_sync_complete</p>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-50 to-transparent"></div>
+            </div>
+          </div>
+        </div>
+        <style>{`
+          @keyframes slideUp {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100%); }
+          }
+        `}</style>
+      </div>
     );
   }
 
@@ -107,27 +182,22 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, p
   const truncate = (text: string, max = 88) => (text.length > max ? `${text.slice(0, max)}…` : text);
 
   return (
-    <StepLayout 
-      title="Mark confidence"
-      subtitle="Default is “Unsure”. That’s normal."
-    >
+    <StepLayout title="Mark confidence" subtitle="Default is “Unsure”. That’s normal.">
       <div className="space-y-8">
-        {/* Compact context + reassurance (secondary) */}
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex flex-wrap gap-2 text-xs">
             <span className="bg-gray-100 px-3 py-1 rounded-full text-gray-600">
-              <i className="fas fa-sign-out-alt mr-1.5"></i>{context.origin}
+              <i className="fas fa-sign-out-alt mr-1.5"></i>
+              {context.origin}
             </span>
             <span className="bg-gray-100 px-3 py-1 rounded-full text-gray-600">
-              <i className="fas fa-briefcase mr-1.5"></i>{role.name}
+              <i className="fas fa-briefcase mr-1.5"></i>
+              {role.name}
             </span>
           </div>
-          <div className="text-xs text-gray-400">
-            Mark uncertainty first; “Unsure” is the default.
-          </div>
+          <div className="text-xs text-gray-400">Mark uncertainty first; “Unsure” is the default.</div>
         </div>
 
-        {/* Legend + filters (visual scanning) */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-2 flex-wrap">
@@ -142,16 +212,19 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, p
               <button
                 onClick={() => setFilter('unsure')}
                 className={`px-4 py-2 rounded-full text-sm font-bold border transition-all ${
-                  filter === 'unsure' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                  filter === 'unsure'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                 }`}
-                title="Uncertainty is normal"
               >
                 <i className="fas fa-question-circle mr-2"></i>Unsure <span className="opacity-80">({counts.unsure})</span>
               </button>
               <button
                 onClick={() => setFilter('high')}
                 className={`px-4 py-2 rounded-full text-sm font-bold border transition-all ${
-                  filter === 'high' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                  filter === 'high'
+                    ? 'bg-green-600 text-white border-green-600'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                 }`}
               >
                 <i className="fas fa-check-circle mr-2"></i>Confident <span className="opacity-80">({counts.high})</span>
@@ -167,23 +240,24 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, p
             </div>
 
             <div className="flex items-center gap-3 text-xs text-gray-400">
-              <span className="flex items-center gap-1.5"><i className="fas fa-check-circle text-green-600"></i>Confident</span>
-              <span className="flex items-center gap-1.5"><i className="fas fa-question-circle text-indigo-600"></i>Unsure</span>
-              <span className="flex items-center gap-1.5"><i className="fas fa-circle-minus text-red-600"></i>Gap</span>
+              <span className="flex items-center gap-1.5">
+                <i className="fas fa-check-circle text-green-600"></i>Confident
+              </span>
+              <span className="flex items-center gap-1.5">
+                <i className="fas fa-question-circle text-indigo-600"></i>Unsure
+              </span>
+              <span className="flex items-center gap-1.5">
+                <i className="fas fa-circle-minus text-red-600"></i>Gap
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Skill cards (no table) */}
         <div className="space-y-4">
           {filteredSkills.map(({ s, idx }) => {
             const isOpen = expanded.has(idx);
             const confidenceStyles =
-              s.confidence === 'high'
-                ? 'bg-green-50 border-green-200'
-                : s.confidence === 'gap'
-                  ? 'bg-red-50 border-red-200'
-                  : 'bg-indigo-50 border-indigo-200';
+              s.confidence === 'high' ? 'bg-green-50 border-green-200' : s.confidence === 'gap' ? 'bg-red-50 border-red-200' : 'bg-indigo-50 border-indigo-200';
 
             return (
               <div key={idx} className={`rounded-2xl border p-5 bg-white shadow-sm ${confidenceStyles}`}>
@@ -196,8 +270,7 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, p
                       <div className="min-w-0">
                         <div className="text-base font-black text-gray-900">{s.skill}</div>
                         <div className="mt-1 text-sm text-gray-700">
-                          <span className="font-bold text-gray-500">Why:</span>{' '}
-                          {isOpen ? s.whyItMatters : truncate(s.whyItMatters)}
+                          <span className="font-bold text-gray-500">Why:</span> {isOpen ? s.whyItMatters : truncate(s.whyItMatters)}
                         </div>
                         <div className="mt-1 text-sm text-gray-700">
                           <span className="font-bold text-gray-500">Assumed from:</span>{' '}
@@ -207,13 +280,13 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, p
                           onClick={() => toggleExpanded(idx)}
                           className="mt-3 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-gray-800"
                         >
-                          {isOpen ? 'Hide details' : 'Show details'} <i className={`fas ${isOpen ? 'fa-chevron-up' : 'fa-chevron-down'} ml-2`}></i>
+                          {isOpen ? 'Hide details' : 'Show details'}{' '}
+                          <i className={`fas ${isOpen ? 'fa-chevron-up' : 'fa-chevron-down'} ml-2`}></i>
                         </button>
                       </div>
                     </div>
                   </div>
 
-                  {/* Confidence control (primary micro-action) */}
                   <div className="flex md:flex-col gap-2 md:items-end">
                     <div className="inline-flex rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
                       <button
@@ -221,7 +294,6 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, p
                         className={`px-3 py-2 rounded-xl text-sm font-bold transition-all ${
                           s.confidence === 'unsure' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'
                         }`}
-                        title="Unsure (default / normal)"
                       >
                         <i className="fas fa-question-circle mr-2"></i>Unsure
                       </button>
@@ -230,7 +302,6 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, p
                         className={`px-3 py-2 rounded-xl text-sm font-bold transition-all ${
                           s.confidence === 'high' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-50'
                         }`}
-                        title="Confident"
                       >
                         <i className="fas fa-check-circle mr-2"></i>Confident
                       </button>
@@ -239,13 +310,14 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, p
                         className={`px-3 py-2 rounded-xl text-sm font-bold transition-all ${
                           s.confidence === 'gap' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-50'
                         }`}
-                        title="Gap"
                       >
                         <i className="fas fa-circle-minus mr-2"></i>Gap
                       </button>
                     </div>
                     <div className="text-xs text-gray-500 md:text-right">
-                      Mark what you know.<br />Leave the rest “Unsure”.
+                      Mark what you know.
+                      <br />
+                      Leave the rest “Unsure”.
                     </div>
                   </div>
                 </div>
@@ -253,22 +325,15 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({ role, context, p
             );
           })}
 
-          {filteredSkills.length === 0 && (
-            <div className="text-center text-sm text-gray-500 py-10">
-              Nothing here for this filter.
-            </div>
-          )}
+          {filteredSkills.length === 0 && <div className="text-center text-sm text-gray-500 py-10">Nothing here for this filter.</div>}
         </div>
 
         <div className="flex items-center justify-between pt-8">
-          <button 
-            onClick={onBack}
-            className="px-6 py-3 text-gray-500 font-bold hover:text-gray-900 transition-colors"
-          >
+          <button onClick={onBack} className="px-6 py-3 text-gray-500 font-bold hover:text-gray-900 transition-colors">
             <i className="fas fa-arrow-left mr-2"></i> Back to options
           </button>
-          <button 
-            onClick={() => onNext(skills)}
+          <button
+            onClick={onNext}
             className="px-8 py-4 bg-indigo-600 text-white rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg transform hover:-translate-y-1"
           >
             Continue to decision support

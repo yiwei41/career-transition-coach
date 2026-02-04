@@ -7,17 +7,31 @@ import { AnalysisProgressDisplay } from './AnalysisProgressDisplay';
 
 interface ExplorationPageProps {
   context: UserContext;
+  cachedRoles: RoleCard[] | null;
+  onRolesFetched: (roles: RoleCard[]) => void;
   onSelectRole: (role: RoleCard) => void;
   onExit: (type: 'not_for_me' | 'unsure') => void;
   onBack?: () => void;
 }
 
-export const ExplorationPage: React.FC<ExplorationPageProps> = ({ context, onSelectRole, onExit, onBack }) => {
-  const [roles, setRoles] = useState<RoleCard[]>([]);
-  const [loading, setLoading] = useState(true);
+export const ExplorationPage: React.FC<ExplorationPageProps> = ({
+  context,
+  cachedRoles,
+  onRolesFetched,
+  onSelectRole,
+  onExit,
+  onBack,
+}) => {
+  const [roles, setRoles] = useState<RoleCard[]>(cachedRoles || []);
+  const [loading, setLoading] = useState<boolean>(() => !(cachedRoles && cachedRoles.length > 0));
+
   const [selectedRole, setSelectedRole] = useState<RoleCard | null>(null);
+
+  // loading animation states
   const [analysisStep, setAnalysisStep] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
+
+  // detail expand states
   const [expandedWhy, setExpandedWhy] = useState(false);
   const [expandedAssumptions, setExpandedAssumptions] = useState(false);
   const [expandedUncertainties, setExpandedUncertainties] = useState(false);
@@ -45,32 +59,51 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({ context, onSel
     setExpandedUncertainties(false);
   }, [selectedRole?.id]);
 
+  // Fetch roles (with caching)
   useEffect(() => {
+    let cancelled = false;
+
+    const hasCache = cachedRoles && cachedRoles.length > 0;
+    if (hasCache) {
+      setRoles(cachedRoles);
+      setLoading(false);
+      return;
+    }
+
     const fetchRoles = async () => {
+      setLoading(true);
       try {
         const res = await generateRolePossibilities(context);
+        // tiny minimum delay so loading animation doesn't flash
+        await new Promise((r) => setTimeout(r, 1200));
+        if (cancelled) return;
         setRoles(res);
+        onRolesFetched(res);
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
+
     fetchRoles();
-  }, [context]);
+    return () => {
+      cancelled = true;
+    };
+  }, [context, cachedRoles, onRolesFetched]);
 
   // Rotate through analysis steps while loading
   useEffect(() => {
     if (!loading) return;
-    
-    const stepInterval = setInterval(() => {
+
+    const stepInterval = window.setInterval(() => {
       setAnalysisStep((prev) => {
         const next = prev + 1;
         return next >= synthesisSteps.length ? prev : next;
       });
     }, 2000);
 
-    const timeInterval = setInterval(() => {
+    const timeInterval = window.setInterval(() => {
       setElapsedTime((prev) => prev + 1);
     }, 1000);
 
@@ -78,11 +111,10 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({ context, onSel
       clearInterval(stepInterval);
       clearInterval(timeInterval);
     };
-  }, [loading, synthesisSteps.length]);
+  }, [loading]);
 
   if (loading) {
     const activeProgress = 60 + (elapsedTime % 4) * 10;
-    
     return (
       <StepLayout title="" subtitle="">
         <AnalysisProgressDisplay
@@ -99,25 +131,24 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({ context, onSel
     );
   }
 
-  // Role overview screen - compact cards
+  // Role overview screen
   if (!selectedRole) {
     return (
-      <StepLayout 
-        title="Role possibilities"
-        subtitle="Pick one to explore. You can change later."
-      >
+      <StepLayout title="Role possibilities" subtitle="Pick one to explore. You can change later.">
         <div className="space-y-6">
-          {/* Context chips - minimal */}
+          {/* Context chips */}
           <div className="flex flex-wrap gap-2 text-xs">
             <span className="bg-gray-100 px-3 py-1 rounded-full text-gray-600">
-              <i className="fas fa-sign-out-alt mr-1.5"></i>{context.origin}
+              <i className="fas fa-sign-out-alt mr-1.5"></i>
+              {context.origin}
             </span>
             <span className="bg-gray-100 px-3 py-1 rounded-full text-gray-600">
-              <i className="fas fa-compass mr-1.5"></i>{context.considering.slice(0, 2).join(", ")}
+              <i className="fas fa-compass mr-1.5"></i>
+              {context.considering.slice(0, 2).join(', ')}
             </span>
           </div>
 
-          {/* Role cards - visual, scannable */}
+          {/* Role cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {roles.map((role) => (
               <button
@@ -132,7 +163,6 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({ context, onSel
                   </div>
                 </div>
 
-                {/* Visual indicators instead of long text */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   <div className="flex items-center gap-1.5 text-xs text-green-600">
                     <i className="fas fa-check-circle"></i>
@@ -158,7 +188,7 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({ context, onSel
             ))}
           </div>
 
-          {/* Navigation buttons */}
+          {/* Navigation */}
           <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
             <button
               onClick={onBack}
@@ -166,23 +196,17 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({ context, onSel
             >
               <i className="fas fa-arrow-left mr-2"></i> Back
             </button>
-            
+
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => onExit('unsure')}
-                className="text-sm text-gray-500 hover:text-gray-700 font-medium"
-              >
+              <button onClick={() => onExit('unsure')} className="text-sm text-gray-500 hover:text-gray-700 font-medium">
                 Not sure yet
               </button>
               <span className="text-gray-300">•</span>
-              <button
-                onClick={() => onExit('not_for_me')}
-                className="text-sm text-gray-500 hover:text-gray-700 font-medium"
-              >
+              <button onClick={() => onExit('not_for_me')} className="text-sm text-gray-500 hover:text-gray-700 font-medium">
                 Skip for now
               </button>
             </div>
-            
+
             <button
               onClick={() => roles.length > 0 && onSelectRole(roles[0])}
               disabled={roles.length === 0}
@@ -196,14 +220,10 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({ context, onSel
     );
   }
 
-  // Role detail screen - one role, simplified
+  // Role detail screen
   return (
-    <StepLayout 
-      title={selectedRole.name}
-      subtitle="Quick scan. One action."
-    >
+    <StepLayout title={selectedRole.name} subtitle="Quick scan. One action.">
       <div className="space-y-6">
-        {/* Back button */}
         <button
           onClick={() => setSelectedRole(null)}
           className="text-sm text-gray-600 hover:text-gray-900 font-medium flex items-center"
@@ -211,7 +231,6 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({ context, onSel
           <i className="fas fa-arrow-left mr-2"></i> Back to all roles
         </button>
 
-        {/* Visual summary cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
             <div className="text-xs font-bold uppercase tracking-widest text-green-700 mb-2 flex items-center gap-2">
@@ -280,7 +299,6 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({ context, onSel
           </div>
         </div>
 
-        {/* Single primary action */}
         <div className="pt-6 border-t border-gray-100 flex flex-col items-center gap-4">
           <button
             onClick={() => onSelectRole(selectedRole)}
@@ -288,28 +306,19 @@ export const ExplorationPage: React.FC<ExplorationPageProps> = ({ context, onSel
           >
             Explore this role <i className="fas fa-arrow-right ml-2"></i>
           </button>
-          
+
           <div className="flex items-center gap-4 text-sm text-gray-500">
-            <button
-              onClick={() => setSelectedRole(null)}
-              className="hover:text-gray-700"
-            >
+            <button onClick={() => setSelectedRole(null)} className="hover:text-gray-700">
               See other roles
             </button>
             <span>•</span>
-            <button
-              onClick={() => onExit('unsure')}
-              className="hover:text-gray-700"
-            >
+            <button onClick={() => onExit('unsure')} className="hover:text-gray-700">
               Not sure
             </button>
           </div>
         </div>
 
-        {/* Minimal reassurance */}
-        <p className="text-xs text-gray-400 text-center">
-          You can change your mind anytime.
-        </p>
+        <p className="text-xs text-gray-400 text-center">You can change your mind anytime.</p>
       </div>
     </StepLayout>
   );

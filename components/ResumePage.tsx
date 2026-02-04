@@ -1,248 +1,213 @@
-import React, { useState, useRef } from 'react';
-import { RoleCard, UserContext, SkillMapping } from '../types';
+import React, { useEffect, useState } from 'react';
+import { UserContext, RoleCard, SkillMapping, ResumeDraft, UserExperienceInput } from '../types';
+import { generateResumeDraft } from '../geminiService';
 import { StepLayout } from './StepLayout';
-import { extractTextFromFile } from '../fileExtract';
-import { generateResumeReframe } from '../geminiService';
-import { AnalysisProgressDisplay } from './AnalysisProgressDisplay';
 
 interface ResumePageProps {
   role: RoleCard;
-  context: UserContext;
   skills: SkillMapping[];
+  context: UserContext;
+  personalInfo?: UserExperienceInput;
+  cachedResume: ResumeDraft | undefined;
+  onResumeFetched: (r: ResumeDraft) => void;
   onBack: () => void;
-  onReset: () => void;
 }
 
-const MAX_FILE_SIZE_MB = 10;
+export const ResumePage: React.FC<ResumePageProps> = ({
+  role,
+  skills,
+  context,
+  personalInfo,
+  cachedResume,
+  onResumeFetched,
+  onBack,
+}) => {
+  const [resume, setResume] = useState<ResumeDraft | null>(cachedResume || null);
+  const [loading, setLoading] = useState(!cachedResume);
+  const [copied, setCopied] = useState(false);
 
-export const ResumePage: React.FC<ResumePageProps> = ({ role, context, skills, onBack, onReset }) => {
-  const [resumeText, setResumeText] = useState('');
-  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [reframedResult, setReframedResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const highSkills = skills.filter(s => s.confidence === 'high').map(s => s.skill);
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setError(null);
-    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      setError(`File too large. Max ${MAX_FILE_SIZE_MB}MB.`);
-      return;
+  useEffect(() => {
+    if (!cachedResume) {
+      const fetchResume = async () => {
+        try {
+          const res = await generateResumeDraft(role, skills, context, personalInfo);
+          setResume(res);
+          onResumeFetched(res);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchResume();
     }
+  }, [role, skills, context, personalInfo, cachedResume, onResumeFetched]);
+
+  const handleCopy = async () => {
+    if (!resume) return;
+
+    const text = `
+Professional Summary:
+${resume.summary}
+
+Suggested Skills:
+${resume.suggestedSkills.join(', ')}
+
+Experience Reframing Tips:
+${resume.pivotPoints
+  .map(p => `- Instead of: "${p.original}"\n  Try: "${p.reframed}"\n  Why: ${p.why}`)
+  .join('\n\n')}
+    `.trim();
+
     try {
-      const text = await extractTextFromFile(file);
-      setResumeText(text);
-      setUploadedFileName(file.name);
-      setReframedResult(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to extract text from file.');
-    }
-    e.target.value = '';
-  };
-
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setResumeText(e.target.value);
-    setUploadedFileName(null);
-    setReframedResult(null);
-    setError(null);
-  };
-
-  const handleGenerate = async () => {
-    const trimmed = resumeText.trim();
-    if (!trimmed) {
-      setError('Please paste your resume content or upload a file.');
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await generateResumeReframe(role, context, trimmed, highSkills);
-      setReframedResult(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate reframed resume.');
-    } finally {
-      setLoading(false);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      console.error('Copy failed', e);
+      alert('Copy failed — please select and copy manually.');
     }
   };
 
   if (loading) {
-    const steps = [
-      { id: 'extract', label: 'EXTRACTING OUTCOMES', progress: 25 },
-      { id: 'translate', label: 'TRANSLATING TERMINOLOGY', progress: 50 },
-      { id: 'weight', label: 'WEIGHTING BULLET POINTS', progress: 75 },
-      { id: 'finalize', label: 'FINALIZING DRAFT', progress: 95 },
-    ];
     return (
-      <StepLayout title="" subtitle="">
-        <AnalysisProgressDisplay
-          title="Resume Reframe"
-          subtitle={`Building a bridge narrative for ${role.name}...`}
-          steps={steps}
-          currentStepIndex={2}
-          activeStepProgress={70}
-          consoleTitle="REFRAME ENGINE"
-          consoleLogs={[
-            { text: `PARSING ORIGIN: ${context.origin}`, highlight: true },
-            { text: `TARGET ROLE: ${role.name}` },
-            { text: 'EXTRACTING OUTCOMES FROM TASKS...' },
-            { text: 'TRANSLATING TO ROLE-SPECIFIC TERMINOLOGY...' },
-          ]}
-          activeStatus="PROCESSING"
-        />
-      </StepLayout>
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center max-w-sm">
+          <div className="relative w-20 h-20 mx-auto mb-6">
+            <i className="fas fa-file-signature text-4xl text-indigo-500 absolute inset-0 flex items-center justify-center"></i>
+            <div className="absolute inset-0 border-4 border-indigo-100 border-t-indigo-500 rounded-full animate-spin"></div>
+          </div>
+          <p className="text-gray-900 font-black uppercase tracking-widest text-xs mb-2">Synthesizing Narrative</p>
+          <p className="text-gray-500 text-sm italic">
+            Reframing your specific experience for the {role.name} ecosystem...
+          </p>
+        </div>
+      </div>
     );
   }
 
   return (
     <StepLayout
-      title="Paste your current experience"
-      subtitle={`We'll use your existing bullet points to build a bridge narrative for a ${role.name} role.`}
+      title="Resume Pivot Narrative"
+      subtitle="Don't just list what you did—explain why it matters for what you'll do next."
     >
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Resume input */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">
-                Resume content / experience
-              </h3>
-              <textarea
-                value={resumeText}
-                onChange={handleTextChange}
-                placeholder="Paste your current resume bullet points, work history, and key achievements here. Don't worry about formatting—we'll reframe them for your target role."
-                className="w-full h-64 p-4 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-                disabled={loading}
-              />
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx,.txt"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <i className="fas fa-file-upload"></i>
-                  Upload PDF, Word, or TXT
-                </button>
-                {uploadedFileName && (
-                  <span className="text-xs text-gray-500 flex items-center gap-1">
-                    <i className="fas fa-check-circle text-green-500"></i>
-                    {uploadedFileName}
-                  </span>
-                )}
-              </div>
-              <p className="mt-3 text-xs text-gray-400 flex items-start gap-2">
-                <i className="fas fa-info-circle mt-0.5 flex-shrink-0"></i>
-                The more specific data you provide (metrics, tool names, outcomes), the better our reframe will be.
-              </p>
-              {error && (
-                <p className="mt-3 text-sm text-red-600 flex items-center gap-2">
-                  <i className="fas fa-exclamation-circle"></i>
-                  {error}
-                </p>
-              )}
-            </div>
+      <div className="max-w-3xl mx-auto space-y-8">
+        <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+          <div className="text-sm text-indigo-900/60 font-medium">
+            <i className="fas fa-info-circle mr-2"></i> This draft incorporates your specific projects and achievements.
           </div>
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-2 px-4 py-2 bg-white text-indigo-700 rounded-lg border border-indigo-200 font-bold text-sm hover:shadow-sm transition-all"
+          >
+            <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`}></i>
+            {copied ? 'Copied!' : 'Copy text'}
+          </button>
+        </div>
 
-          {/* Right: Focus points & strategy */}
-          <div className="space-y-4">
-            <div className="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-2xl p-5 text-white">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-200 mb-3">
-                Focus points
-              </h3>
-              <p className="text-sm text-indigo-100 mb-3">
-                We'll focus on these validated strengths when reframing your history:
-              </p>
-              {highSkills.length > 0 ? (
-                <ul className="space-y-2">
-                  {highSkills.map((s, i) => (
-                    <li key={i} className="text-sm flex items-start gap-2">
-                      <i className="fas fa-check mt-0.5 flex-shrink-0"></i>
-                      <span>{s}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-indigo-200 italic">No high-confidence skills selected yet.</p>
+        <div className="bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden min-h-[800px] flex flex-col">
+          <div className="p-12 space-y-10 flex-grow">
+            <header className="border-b border-gray-100 pb-8 text-center">
+              <h2 className="text-3xl font-black text-gray-900 mb-2 uppercase tracking-tighter">
+                {personalInfo?.fullName || 'Your Name'}
+              </h2>
+              <p className="text-indigo-600 font-bold uppercase tracking-widest text-sm">{role.name} Aspirant</p>
+              {personalInfo?.contactEmail && (
+                <div className="mt-2 text-xs text-gray-400 flex justify-center gap-4 flex-wrap">
+                  <span>{personalInfo.contactEmail}</span>
+                  {personalInfo.linkedIn && <span>{personalInfo.linkedIn}</span>}
+                </div>
               )}
-            </div>
+            </header>
 
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-3">
-                Reframe strategy
-              </h3>
-              <ol className="space-y-3">
-                {[
-                  'Extracting outcomes from your tasks.',
-                  `Translating specialized jargon to ${role.name} terminology.`,
-                  'Weighting bullet points by relevance.',
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-gray-700">
-                    <span className="w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
-                      {i + 1}
-                    </span>
-                    <span>{item}</span>
-                  </li>
+            <section>
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Professional Summary</h3>
+              <p className="text-gray-800 leading-relaxed italic border-l-4 border-indigo-100 pl-6 text-lg">
+                “{resume?.summary}”
+              </p>
+            </section>
+
+            <section>
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Transferable Strengths</h3>
+              <div className="flex flex-wrap gap-2">
+                {resume?.suggestedSkills?.map((s, i) => (
+                  <span
+                    key={i}
+                    className="px-3 py-1 bg-gray-50 text-gray-700 rounded-md border border-gray-200 text-sm font-medium italic"
+                  >
+                    {s}
+                  </span>
                 ))}
-              </ol>
-            </div>
+              </div>
+            </section>
+
+            <section className="space-y-6">
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Reframing Examples</h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Replace generic task descriptions with these high-impact bridges:
+              </p>
+
+              <div className="space-y-6">
+                {resume?.pivotPoints?.map((p, i) => (
+                  <div
+                    key={i}
+                    className="group relative bg-indigo-50/30 p-6 rounded-xl border border-indigo-100/50"
+                  >
+                    <div className="mb-4">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">
+                        Before: (Generic Evidence)
+                      </span>
+                      <p className="text-sm text-gray-500 line-through decoration-red-300 opacity-60 italic">
+                        “{p.original}”
+                      </p>
+                    </div>
+
+                    <div className="mb-4">
+                      <span className="text-[10px] font-bold text-indigo-400 uppercase block mb-1">
+                        After: (Optimized for {role.name})
+                      </span>
+                      <p className="text-base font-bold text-gray-900">“{p.reframed}”</p>
+                    </div>
+
+                    <div className="pt-3 border-t border-indigo-100 flex items-start gap-2">
+                      <i className="fas fa-info-circle text-indigo-400 mt-0.5"></i>
+                      <p className="text-xs text-indigo-600 font-medium">Strategy: {p.why}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="bg-gray-900 text-white p-6 rounded-xl shadow-lg">
+              <h3 className="text-xs font-black text-indigo-300 uppercase tracking-widest mb-3">Coach's Guidance</h3>
+              <p className="text-sm leading-relaxed opacity-90">{resume?.experienceGuidance}</p>
+            </section>
           </div>
         </div>
 
-        {/* Reframed result */}
-        {reframedResult && (
-          <div className="mt-6 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-indigo-600 mb-4">
-              Reframed resume draft
-            </h3>
-            <pre className="whitespace-pre-wrap text-sm text-gray-800 font-sans leading-relaxed bg-gray-50 p-4 rounded-xl overflow-x-auto">
-              {reframedResult}
-            </pre>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(reframedResult);
-              }}
-              className="mt-4 px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              <i className="fas fa-copy mr-2"></i>
-              Copy to clipboard
-            </button>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-gray-100">
-          <button
-            onClick={onBack}
-            className="text-sm text-gray-600 hover:text-gray-900 font-medium flex items-center"
-          >
-            <i className="fas fa-arrow-left mr-2"></i>
-            Back to decision
+        <div className="flex items-center justify-between pt-8">
+          <button onClick={onBack} className="px-6 py-3 text-gray-500 font-bold hover:text-gray-900 transition-colors">
+            <i className="fas fa-arrow-left mr-2"></i> Update your evidence
           </button>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onReset}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Start over
-            </button>
-            <button
-              onClick={handleGenerate}
-              disabled={!resumeText.trim()}
-              className="px-8 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Generate reframed draft
-            </button>
-          </div>
+          <button
+            onClick={() => window.print()}
+            className="px-8 py-4 bg-gray-900 text-white rounded-full font-bold hover:bg-black transition-all shadow-lg"
+          >
+            <i className="fas fa-print mr-2"></i> Print Guide
+          </button>
         </div>
       </div>
     </StepLayout>
