@@ -4,7 +4,23 @@ import { UserContext, AIPreview, RoleCard, SkillMapping, DecisionSupport, Resume
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
+/** Retry once after delay when quota/rate-limit error (often transient) */
+async function withQuotaRetry<T>(fn: () => Promise<T>, retries = 1): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    const msg = String((err as Error)?.message || err);
+    const isQuota = /429|quota|RESOURCE_EXHAUSTED|limit.*0|exceeded|配额|已用尽/i.test(msg);
+    if (isQuota && retries > 0) {
+      await new Promise((r) => setTimeout(r, 2500));
+      return withQuotaRetry(fn, retries - 1);
+    }
+    throw err;
+  }
+}
+
 export const generateAIUnderstanding = async (context: UserContext): Promise<AIPreview> => {
+  return withQuotaRetry(async () => {
   const response = await ai.models.generateContent({
     model: "gemini-2.0-flash",
     contents: `Analyze this career transition context and return a structured assessment:
@@ -26,9 +42,11 @@ export const generateAIUnderstanding = async (context: UserContext): Promise<AIP
     },
   });
   return JSON.parse(response.text);
+  });
 };
 
 export const generateRolePossibilities = async (context: UserContext): Promise<RoleCard[]> => {
+  return withQuotaRetry(async () => {
   const response = await ai.models.generateContent({
     model: "gemini-2.0-flash",
     contents: `Generate 3-4 role possibility cards for someone transitioning from ${context.origin} into ${context.considering.join(", ")}. 
@@ -53,9 +71,11 @@ export const generateRolePossibilities = async (context: UserContext): Promise<R
     },
   });
   return JSON.parse(response.text);
+  });
 };
 
 export const generateSkillMapping = async (role: RoleCard, context: UserContext): Promise<SkillMapping[]> => {
+  return withQuotaRetry(async () => {
   const response = await ai.models.generateContent({
     model: "gemini-2.0-flash",
     contents: `Create a skill mapping table for the role "${role.name}" for a candidate coming from "${context.origin}".
@@ -78,9 +98,11 @@ export const generateSkillMapping = async (role: RoleCard, context: UserContext)
   });
   const data = JSON.parse(response.text);
   return data.map((item: any) => ({ ...item, confidence: 'unsure' }));
+  });
 };
 
 export const generateDecisionSupport = async (role: RoleCard, skills: SkillMapping[], context: UserContext): Promise<DecisionSupport> => {
+  return withQuotaRetry(async () => {
   const response = await ai.models.generateContent({
     model: "gemini-2.0-flash",
     contents: `Based on the transition analysis for "${role.name}":
@@ -103,6 +125,7 @@ export const generateDecisionSupport = async (role: RoleCard, skills: SkillMappi
     },
   });
   return JSON.parse(response.text);
+  });
 };
 
 export const generateResumeDraft = async (role: RoleCard, skills: SkillMapping[], context: UserContext, personalInfo?: UserExperienceInput): Promise<ResumeDraft> => {

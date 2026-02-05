@@ -32,7 +32,7 @@ class ErrorBoundary extends React.Component<
             </pre>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
             >
               Refresh
             </button>
@@ -62,7 +62,7 @@ if (!rootElement) {
 }
 
 const Fallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400">
+  <div className="min-h-screen flex items-center justify-center bg-warm-50 text-gray-600">
     Loading…
   </div>
 );

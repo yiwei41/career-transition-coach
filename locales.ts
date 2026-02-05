@@ -39,9 +39,16 @@ export interface Translations {
   // Auth
   auth: {
     title: string;
+    welcome: string;
     googleSignIn: string;
-    guestContinue: string;
     privacyNote: string;
+    guestContinue: string;
+    useEmail: string;
+    hideEmail: string;
+    newHere: string;
+    createAccount: string;
+    alreadyHaveAccount: string;
+    logIn: string;
   };
   // Settings
   settings: {
@@ -83,6 +90,7 @@ export interface Translations {
   };
   // Builder
   builder: {
+    retry: string;
     yourBackground: string;
     pickOne: string;
     content: string;
@@ -155,9 +163,16 @@ export const translations: Record<Language, Translations> = {
     },
     auth: {
       title: 'Coach Auth',
+      welcome: 'Ready when you are',
       googleSignIn: 'Continue with Google',
-      guestContinue: 'Continue without an account',
-      privacyNote: 'We only use your Google account to save your progress.',
+      privacyNote: 'We use it only to save your progress.',
+      guestContinue: 'Explore first—sign in when you\'re ready',
+      useEmail: 'Prefer email?',
+      hideEmail: 'Hide email',
+      newHere: 'New here?',
+      createAccount: 'Create an account',
+      alreadyHaveAccount: 'Already have an account?',
+      logIn: 'Log in',
     },
     intro: {
       title: 'Coach.Ai',
@@ -166,6 +181,7 @@ export const translations: Record<Language, Translations> = {
       getStarted: 'Get Started',
     },
     builder: {
+      retry: 'Retry',
       yourBackground: 'Your background',
       pickOne: 'Pick one. Keep it simple.',
       content: 'Content',
@@ -265,9 +281,16 @@ export const translations: Record<Language, Translations> = {
     },
     auth: {
       title: 'Coach 认证',
+      welcome: '准备好了就开始',
       googleSignIn: '使用 Google 账号登录',
-      guestContinue: '不使用账号继续',
-      privacyNote: '我们仅使用您的 Google 账号来保存您的进度。',
+      privacyNote: '我们仅用它保存您的进度，不会访问邮件或其他数据。',
+      guestContinue: '先探索，稍后再登录',
+      useEmail: '使用邮箱？',
+      hideEmail: '收起邮箱',
+      newHere: '新用户？',
+      createAccount: '创建账号',
+      alreadyHaveAccount: '已有账号？',
+      logIn: '登录',
     },
     intro: {
       title: 'Coach.Ai',
@@ -276,6 +299,7 @@ export const translations: Record<Language, Translations> = {
       getStarted: '开始',
     },
     builder: {
+      retry: '重试',
       yourBackground: '您的背景',
       pickOne: '选一个，简单即可。',
       content: '内容',
@@ -368,9 +392,16 @@ export const translations: Record<Language, Translations> = {
     },
     auth: {
       title: 'Coach 認證',
+      welcome: '準備好了就開始',
       googleSignIn: '使用 Google 帳號登入',
-      guestContinue: '不使用帳號繼續',
-      privacyNote: '我們僅使用您的 Google 帳號來儲存您的進度。',
+      privacyNote: '我們僅用它儲存您的進度。',
+      guestContinue: '先探索——準備好再登入',
+      useEmail: '使用信箱？',
+      hideEmail: '收起信箱',
+      newHere: '新用戶？',
+      createAccount: '建立帳號',
+      alreadyHaveAccount: '已有帳號？',
+      logIn: '登入',
     },
     intro: {
       title: 'Coach.Ai',
@@ -379,6 +410,7 @@ export const translations: Record<Language, Translations> = {
       getStarted: '開始',
     },
     builder: {
+      retry: '重試',
       yourBackground: '您的背景',
       pickOne: '選一個，簡單即可。',
       content: '內容',

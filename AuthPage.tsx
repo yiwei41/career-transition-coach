@@ -248,15 +248,16 @@ const AuthPage: React.FC<AuthPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-warm-50 px-4">
       <div className="w-full max-w-sm">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl px-6 py-8 shadow-xl">
+        <div className="bg-white border border-warm-200 rounded-3xl px-6 py-8 shadow-sm">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-500 flex items-center justify-center text-white mb-3">
+            <div className="w-10 h-10 rounded-2xl bg-primary-600 flex items-center justify-center text-white mb-2" aria-hidden="true">
               <i className="fas fa-sparkles" aria-hidden="true"></i>
             </div>
-            <h1 className="text-white text-xl font-semibold tracking-tight">
-              Coach Auth
+            <span className="text-sm font-medium text-gray-500 mb-3 tracking-tight">Coach.Ai</span>
+            <h1 className="text-gray-900 text-xl font-medium tracking-normal leading-snug text-center">
+              {t.auth.welcome}
             </h1>
           </div>
 
@@ -271,12 +272,12 @@ const AuthPage: React.FC<AuthPageProps> = ({
               type="button"
               onClick={handleGoogle}
               disabled={googleLoading || emailLoading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-white text-slate-900 text-sm font-semibold py-3.5 shadow-sm hover:bg-slate-100 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-white text-gray-900 text-sm font-semibold py-3.5 shadow-sm border border-warm-200 hover:bg-warm-50 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
               aria-busy={googleLoading}
             >
               {googleLoading ? (
                 <>
-                  <span className="inline-block w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="inline-block w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                   <span>Signing in…</span>
                 </>
               ) : (
@@ -288,8 +289,8 @@ const AuthPage: React.FC<AuthPageProps> = ({
             </button>
           )}
 
-          <p className="text-[11px] text-slate-500 mb-4 text-center">
-            We only use your Google account to save your progress.
+          <p className="text-[11px] text-gray-500 mb-6 text-center leading-relaxed max-w-[260px] mx-auto">
+            {t.auth.privacyNote}
           </p>
 
           <button
@@ -311,24 +312,24 @@ const AuthPage: React.FC<AuthPageProps> = ({
                 alert('Error: ' + (err instanceof Error ? err.message : String(err)));
               }
             }}
-            className="w-full text-xs text-slate-300 mb-2 underline underline-offset-4 decoration-slate-500 hover:text-white text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full py-1 cursor-pointer"
+            className="w-full text-xs text-gray-600 mb-2 underline underline-offset-4 decoration-gray-400 hover:text-gray-900 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-full py-1 cursor-pointer"
           >
             {t.auth.guestContinue}
           </button>
 
           <div className="flex items-center mb-2">
-            <div className="flex-1 h-px bg-slate-800" />
-            <span className="mx-3 text-[11px] uppercase tracking-[0.16em] text-slate-500">
+            <div className="flex-1 h-px bg-warm-200" />
+            <span className="mx-3 text-[11px] text-gray-400">
               or
             </span>
-            <div className="flex-1 h-px bg-slate-800" />
+            <div className="flex-1 h-px bg-warm-200" />
           </div>
           <button
             type="button"
             onClick={() => setShowEmail((v) => !v)}
-            className="w-full text-xs text-slate-300 underline underline-offset-4 decoration-slate-500 hover:text-white text-center mb-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full py-1"
+            className="w-full text-xs text-gray-600 underline underline-offset-4 decoration-gray-400 hover:text-primary-600 text-center mb-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-full py-2 transition-colors"
           >
-            {showEmail ? 'Hide email' : 'Use email instead'}
+            {showEmail ? t.auth.hideEmail : t.auth.useEmail}
           </button>
 
           {showEmail && (
@@ -336,7 +337,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
               <div className="space-y-2">
                 <label
                   htmlFor="email"
-                  className="block text-xs font-medium text-slate-300"
+                  className="block text-xs font-medium text-gray-600"
                 >
                   Email
                 </label>
@@ -346,7 +347,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl bg-slate-900/60 border border-slate-700 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full rounded-2xl bg-warm-50 border border-warm-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="you@example.com"
                 />
               </div>
@@ -354,7 +355,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
               <div className="space-y-2">
                 <label
                   htmlFor="password"
-                  className="block text-xs font-medium text-slate-300"
+                  className="block text-xs font-medium text-gray-600"
                 >
                   Password
                 </label>
@@ -364,7 +365,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl bg-slate-900/60 border border-slate-700 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full rounded-2xl bg-warm-50 border border-warm-200 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="••••••••"
                 />
               </div>
@@ -378,7 +379,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
               <button
                 type="submit"
                 disabled={googleLoading || emailLoading}
-                className="w-full inline-flex items-center justify-center rounded-full bg-indigo-500 text-white text-sm font-semibold py-2.5 mt-1 hover:bg-indigo-600 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                className="w-full inline-flex items-center justify-center rounded-full bg-primary-600 text-white text-sm font-semibold py-2.5 mt-1 hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                 aria-busy={emailLoading}
               >
                 {emailLoading ? (
@@ -387,30 +388,30 @@ const AuthPage: React.FC<AuthPageProps> = ({
                     {mode === 'login' ? 'Logging in…' : 'Creating…'}
                   </>
                 ) : mode === 'login' ? (
-                  'Log in'
+                  t.auth.logIn
                 ) : (
-                  'Create account'
+                  t.auth.createAccount
                 )}
               </button>
             </form>
           )}
 
-          <div className="mt-6 text-center text-xs text-slate-400">
+          <div className="mt-6 text-center text-xs text-gray-500">
             {mode === 'login' ? (
               <button
                 type="button"
                 onClick={toggleMode}
-                className="hover:text-white underline underline-offset-2 decoration-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full px-1 py-0.5"
+                className="hover:text-primary-600 underline underline-offset-2 decoration-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-full px-1 py-0.5 transition-colors"
               >
-                New here? <span className="font-semibold">Create an account</span>
+                {t.auth.newHere} <span className="font-medium">{t.auth.createAccount}</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={toggleMode}
-                className="hover:text-white underline underline-offset-2 decoration-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-full px-1 py-0.5"
+                className="hover:text-primary-600 underline underline-offset-2 decoration-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-full px-1 py-0.5 transition-colors"
               >
-                Already have an account? <span className="font-semibold">Log in</span>
+                {t.auth.alreadyHaveAccount} <span className="font-medium">{t.auth.logIn}</span>
               </button>
             )}
           </div>

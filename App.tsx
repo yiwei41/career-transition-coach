@@ -286,10 +286,10 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <nav className="fixed top-0 left-0 right-0 bg-white/95 border-b border-gray-100 z-50">
+      <nav className="fixed top-0 left-0 right-0 bg-white/95 border-b border-warm-200 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer" onClick={handleReset}>
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white">
               <i className="fas fa-route"></i>
             </div>
             <span className="font-bold text-gray-900 tracking-tight">Coach.ai</span>
@@ -305,11 +305,11 @@ const App: React.FC = () => {
                   type="button"
                   onClick={() => handleStepClick(s)}
                   disabled={!canGo}
-                  className={`py-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 rounded ${
+                  className={`py-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded ${
                     isActive
-                      ? 'text-indigo-600 border-b-2 border-indigo-600'
+                      ? 'text-primary-600 border-b-2 border-primary-600'
                       : canGo
-                        ? 'text-gray-500 hover:text-indigo-600 cursor-pointer'
+                        ? 'text-gray-500 hover:text-primary-600 cursor-pointer'
                         : 'text-gray-300 cursor-not-allowed'
                   }`}
                 >
@@ -334,7 +334,7 @@ const App: React.FC = () => {
 
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100">
           <div
-            className="h-full bg-indigo-600 transition-all duration-500 ease-out"
+            className="h-full bg-primary-600 transition-all duration-500 ease-out"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -423,7 +423,7 @@ const App: React.FC = () => {
 
       <SettingsSidebar isOpen={showSettings} onClose={() => setShowSettings(false)} />
 
-      <footer className="bg-white border-t border-gray-100 py-10 mt-auto">
+      <footer className="bg-white border-t border-warm-200 py-10 mt-auto">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <p className="text-sm text-gray-400 mb-2 font-medium uppercase tracking-widest">{t.app.principles}</p>
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-xs text-gray-500 font-bold uppercase">

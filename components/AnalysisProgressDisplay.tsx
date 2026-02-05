@@ -64,9 +64,9 @@ export const AnalysisProgressDisplay: React.FC<AnalysisProgressDisplayProps> = (
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                   isCompleted
-                    ? 'bg-indigo-500 text-white'
+                    ? 'bg-primary-500 text-white'
                     : isActive
-                    ? 'bg-indigo-500 text-white'
+                    ? 'bg-primary-500 text-white'
                     : 'bg-gray-200 text-gray-400'
                 }`}
               >
@@ -90,14 +90,14 @@ export const AnalysisProgressDisplay: React.FC<AnalysisProgressDisplayProps> = (
                     {step.label}
                   </span>
                   {isActive && (
-                    <span className="text-xs font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded">
+                    <span className="text-xs font-bold text-primary-600 bg-primary-100 px-2 py-0.5 rounded">
                       {activeStatus}
                     </span>
                   )}
                 </div>
                 <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-indigo-500 rounded-full transition-all duration-500 ease-out"
+                    className="h-full bg-primary-500 rounded-full transition-all duration-500 ease-out"
                     style={{
                       width: isCompleted ? '100%' : isActive ? `${activeStepProgress}%` : '0%',
                     }}
@@ -110,14 +110,14 @@ export const AnalysisProgressDisplay: React.FC<AnalysisProgressDisplayProps> = (
       </div>
 
       {/* Code Generation Style Console */}
-      <div className="bg-slate-900 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
-        <div className="px-4 py-3 border-b border-slate-700 flex items-center gap-2">
+      <div className="bg-gray-900 rounded-xl border border-gray-700 overflow-hidden shadow-lg">
+        <div className="px-4 py-3 border-b border-gray-700 flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-          <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">
+          <span className="text-xs font-mono text-gray-400 uppercase tracking-wider">
             {consoleTitle}
           </span>
           <div className="ml-auto">
-            <i className="fas fa-microchip text-slate-600 text-sm"></i>
+            <i className="fas fa-microchip text-gray-600 text-sm"></i>
           </div>
         </div>
         <div className="p-4 font-mono text-sm space-y-2 min-h-[120px]">
@@ -125,17 +125,17 @@ export const AnalysisProgressDisplay: React.FC<AnalysisProgressDisplayProps> = (
             <div
               key={i}
               className={`flex items-start gap-2 ${
-                log.highlight ? 'text-indigo-400' : 'text-slate-400'
+                log.highlight ? 'text-primary-400' : 'text-gray-400'
               }`}
             >
-              <span className="text-slate-500 flex-shrink-0">
+              <span className="text-gray-500 flex-shrink-0">
                 {log.prefix ?? '>'}
               </span>
-              <span className={log.highlight ? 'text-indigo-400' : ''}>{log.text}</span>
+              <span className={log.highlight ? 'text-primary-400' : ''}>{log.text}</span>
             </div>
           ))}
           {displayedLogIndex < consoleLogs.length && (
-            <span className="inline-block w-2 h-4 bg-slate-500 animate-pulse ml-1"></span>
+            <span className="inline-block w-2 h-4 bg-gray-500 animate-pulse ml-1"></span>
           )}
         </div>
       </div>

@@ -249,19 +249,19 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext, initialContext
                     }}
                     className={[
                       'rounded-2xl border p-4 text-left transition-all',
-                      'hover:border-indigo-300 hover:bg-indigo-50/40',
-                      selected ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200' : 'border-gray-200',
+                      'hover:border-primary-200 hover:bg-primary-50/30',
+                      selected ? 'border-primary-500 bg-primary-50/60 ring-1 ring-primary-200' : 'border-gray-200',
                     ].join(' ')}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                          selected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'
+                          selected ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'
                         }`}
                       >
                         <i className={`fas ${opt.icon}`}></i>
                       </div>
-                      <div className={`font-bold ${selected ? 'text-indigo-700' : 'text-gray-900'}`}>{opt.label}</div>
+                      <div className={`font-bold ${selected ? 'text-primary-700' : 'text-gray-900'}`}>{opt.label}</div>
                     </div>
                   </button>
                 );
@@ -276,7 +276,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext, initialContext
                 <input
                   type="text"
                   placeholder="e.g., Design + Engineering, Sales + Marketing..."
-                  className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm"
+                  className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm"
                   value={customOrigin}
                   onChange={(e) => setCustomOrigin(e.target.value)}
                 />
@@ -293,7 +293,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext, initialContext
                   setStep('target_roles');
                 }}
                 disabled={!context.origin}
-                className="px-8 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                className="px-8 py-3 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
                 {t.builder.next} <i className="fas fa-arrow-right ml-2"></i>
               </button>
@@ -339,15 +339,15 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext, initialContext
                     onClick={() => handleToggleConsidering(role)}
                     className={[
                       'rounded-2xl border p-4 text-left transition-all',
-                      'hover:border-indigo-300 hover:bg-indigo-50/40',
-                      selected ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200' : 'border-gray-200',
+                      'hover:border-primary-200 hover:bg-primary-50/30',
+                      selected ? 'border-primary-500 bg-primary-50/60 ring-1 ring-primary-200' : 'border-gray-200',
                     ].join(' ')}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <div className={`font-bold ${selected ? 'text-indigo-700' : 'text-gray-900'}`}>{role}</div>
+                      <div className={`font-bold ${selected ? 'text-primary-700' : 'text-gray-900'}`}>{role}</div>
                       <div
                         className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          selected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-400'
+                          selected ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-400'
                         }`}
                       >
                         <i className={`fas ${selected ? 'fa-check' : 'fa-plus'}`}></i>
@@ -365,7 +365,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext, initialContext
               <button
                 onClick={() => setStep('friction')}
                 disabled={context.considering.length === 0}
-                className="px-8 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                className="px-8 py-3 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
                 {t.builder.next} <i className="fas fa-arrow-right ml-2"></i>
               </button>
@@ -385,19 +385,19 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext, initialContext
                     onClick={() => handleSelectFriction(card.id)}
                     className={[
                       'rounded-2xl border p-4 text-left transition-all',
-                      'hover:border-indigo-300 hover:bg-indigo-50/40',
-                      selected ? 'border-indigo-600 bg-indigo-50 ring-2 ring-indigo-200' : 'border-gray-200',
+                      'hover:border-primary-200 hover:bg-primary-50/30',
+                      selected ? 'border-primary-500 bg-primary-50/60 ring-1 ring-primary-200' : 'border-gray-200',
                     ].join(' ')}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                          selected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'
+                          selected ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'
                         }`}
                       >
                         <i className={`fas ${card.icon}`}></i>
                       </div>
-                      <div className={`font-bold ${selected ? 'text-indigo-700' : 'text-gray-900'}`}>{card.label}</div>
+                      <div className={`font-bold ${selected ? 'text-primary-700' : 'text-gray-900'}`}>{card.label}</div>
                     </div>
                   </button>
                 );
@@ -408,7 +408,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext, initialContext
               <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Optional note</label>
               <textarea
                 placeholder="Add a quick detail (optional)…"
-                className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm"
+                className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm"
                 rows={3}
                 value={context.frictionText}
                 onChange={(e) => setContext((prev) => ({ ...prev, frictionText: e.target.value }))}
@@ -417,12 +417,22 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext, initialContext
             </div>
 
             {error && (
-              <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2">
+              <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2 flex-wrap">
                 <i className="fas fa-exclamation-circle mt-0.5 flex-shrink-0"></i>
-                <span>{error}</span>
-                <button onClick={() => setError(null)} className="ml-auto text-red-500 hover:text-red-700" aria-label="Dismiss">
-                  <i className="fas fa-times"></i>
-                </button>
+                <span className="flex-1 min-w-0">{error}</span>
+                <div className="flex items-center gap-2 ml-auto">
+                  {(/配额|quota|exceeded/i.test(error)) && (
+                    <button
+                      onClick={() => { setError(null); handleGeneratePreview(); }}
+                      className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+                    >
+                      {t.builder.retry}
+                    </button>
+                  )}
+                  <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 p-1" aria-label="Dismiss">
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -433,7 +443,7 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext, initialContext
               <button
                 onClick={handleGeneratePreview}
                 disabled={loading || !context.origin || context.considering.length === 0 || !selectedFriction}
-                className="px-8 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                className="px-8 py-3 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
                 <i className="fas fa-wand-magic-sparkles mr-2"></i>
                 Analyze

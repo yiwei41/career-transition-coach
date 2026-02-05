@@ -91,7 +91,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
       {/* User Avatar/Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
         aria-label="User menu"
       >
         {userInfo?.avatar ? (
@@ -101,7 +101,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             className="w-8 h-8 rounded-full border-2 border-gray-200"
           />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-sm font-semibold">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white text-sm font-semibold">
             {userInfo?.name?.[0]?.toUpperCase() || 'G'}
           </div>
         )}
@@ -127,7 +127,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                   className="w-10 h-10 rounded-full border-2 border-gray-200"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white font-semibold">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-semibold">
                   {userInfo?.name?.[0]?.toUpperCase() || 'G'}
                 </div>
               )}
@@ -148,7 +148,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               onClick={handleHistoryClick}
               className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors group"
             >
-              <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+              <div className="w-10 h-10 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center group-hover:bg-primary-200 transition-colors">
                 <i className="fas fa-history"></i>
               </div>
               <div className="flex-1">

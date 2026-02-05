@@ -53,7 +53,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectRecord, onBack
     return (
       <StepLayout title="History" subtitle="Loading your past sessions...">
         <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       </StepLayout>
     );
@@ -73,7 +73,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectRecord, onBack
           {onBack && (
             <button
               onClick={onBack}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-colors"
+              className="px-6 py-3 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-colors"
             >
               {t.history.startExploring}
             </button>
@@ -105,12 +105,12 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectRecord, onBack
           {history.map((record) => (
             <div
               key={record.id}
-              className="bg-white rounded-2xl border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all p-6"
+              className="bg-white rounded-2xl border border-gray-200 hover:border-primary-300 hover:shadow-md transition-all p-6"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 text-white flex items-center justify-center flex-shrink-0">
                       <i className="fas fa-briefcase text-xl"></i>
                     </div>
                     <div className="flex-1">
@@ -183,7 +183,7 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ onSelectRecord, onBack
                   {onSelectRecord && (
                     <button
                       onClick={() => onSelectRecord(record)}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors flex items-center gap-2"
                     >
                       <i className="fas fa-eye"></i>
                       {t.history.view}

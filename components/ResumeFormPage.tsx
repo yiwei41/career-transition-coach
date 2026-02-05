@@ -112,9 +112,9 @@ export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, in
                     setFormData({ ...emptyForm, ...initialData });
                     setMode('edit');
                   }}
-                  className="flex-1 p-6 rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100/50 hover:border-indigo-300 transition-all text-left group"
+                  className="flex-1 p-6 rounded-2xl border-2 border-primary-200 bg-primary-50/50 hover:bg-primary-100/50 hover:border-primary-300 transition-all text-left group"
                 >
-                  <i className="fas fa-edit text-indigo-600 text-xl mb-2 block"></i>
+                  <i className="fas fa-edit text-primary-600 text-xl mb-2 block"></i>
                   <span className="font-bold text-gray-900 block mb-1">Edit existing content</span>
                   <span className="text-xs text-gray-600">
                     View and modify your previously uploaded resume content
@@ -162,16 +162,16 @@ export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, in
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onClick={() => fileInputRef.current?.click()}
-                className="mb-4 p-6 rounded-2xl border-2 border-dashed border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/30 cursor-pointer transition-all flex flex-col items-center justify-center gap-2 text-gray-500"
+                className="mb-4 p-6 rounded-2xl border-2 border-dashed border-gray-200 hover:border-primary-300 hover:bg-primary-50/30 cursor-pointer transition-all flex flex-col items-center justify-center gap-2 text-gray-500"
               >
                 {uploading ? (
-                  <span className="flex items-center gap-2 text-indigo-600">
+                  <span className="flex items-center gap-2 text-primary-600">
                     <i className="fas fa-spinner fa-spin"></i>
                     Parsing file…
                   </span>
                 ) : (
                   <>
-                    <i className="fas fa-cloud-upload-alt text-2xl text-indigo-400"></i>
+                    <i className="fas fa-cloud-upload-alt text-2xl text-primary-400"></i>
                     <span className="text-sm font-medium">
                       Click or drag to upload resume (PDF, Word, TXT)
                     </span>
@@ -196,7 +196,7 @@ export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, in
                 value={formData.rawExperience}
                 onChange={e => setFormData({...formData, rawExperience: e.target.value})}
                 placeholder="Paste your current resume bullet points, work history, and key achievements here. Don't worry about formatting..."
-                className="w-full p-6 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 min-h-[400px] outline-none transition-all font-mono text-sm bg-gray-50/30"
+                className="w-full p-6 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-primary-500 min-h-[400px] outline-none transition-all font-mono text-sm bg-gray-50/30"
               />
               <div className="mt-3 flex items-start gap-2 text-xs text-gray-400">
                 <i className="fas fa-info-circle mt-0.5"></i>
@@ -212,7 +212,7 @@ export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, in
                   value={formData.fullName || ''}
                   onChange={e => setFormData({...formData, fullName: e.target.value})}
                   placeholder="e.g. Jane Smith"
-                  className="w-full p-3 rounded-lg border border-gray-100 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                  className="w-full p-3 rounded-lg border border-gray-100 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all"
                  />
                </div>
                <div className="flex flex-col md:flex-row gap-4">
@@ -223,7 +223,7 @@ export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, in
                   value={formData.contactEmail}
                   onChange={e => setFormData({...formData, contactEmail: e.target.value})}
                   placeholder="hello@example.com"
-                  className="w-full p-3 rounded-lg border border-gray-100 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                  className="w-full p-3 rounded-lg border border-gray-100 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all"
                  />
                </div>
                <div className="flex-1">
@@ -233,7 +233,7 @@ export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, in
                   value={formData.linkedIn}
                   onChange={e => setFormData({...formData, linkedIn: e.target.value})}
                   placeholder="linkedin.com/in/username"
-                  className="w-full p-3 rounded-lg border border-gray-100 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all"
+                  className="w-full p-3 rounded-lg border border-gray-100 bg-gray-50 text-sm focus:bg-white focus:ring-2 focus:ring-primary-500 transition-all"
                  />
                </div>
                </div>
@@ -256,7 +256,7 @@ export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, in
                       setUploadedFileName(null);
                       setMode('fresh');
                     }}
-                    className="text-sm text-gray-500 hover:text-indigo-600 font-medium"
+                    className="text-sm text-gray-500 hover:text-primary-600 font-medium"
                   >
                     Start fresh instead
                   </button>
@@ -264,7 +264,7 @@ export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, in
               </div>
               <button 
                 type="submit"
-                className="px-8 py-4 bg-indigo-600 text-white rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2 group"
+                className="px-8 py-4 bg-primary-600 text-white rounded-full font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-100 flex items-center gap-2 group"
               >
                 Generate Customized Resume
                 <i className="fas fa-magic transition-transform group-hover:rotate-12"></i>
@@ -275,20 +275,20 @@ export const ResumeFormPage: React.FC<ResumeFormPageProps> = ({ role, skills, in
         </div>
 
         <div className="space-y-6">
-          <div className="bg-indigo-900 text-white p-6 rounded-2xl shadow-xl">
-            <h4 className="text-xs font-black text-indigo-300 uppercase tracking-widest mb-4">Focus Points</h4>
+          <div className="bg-primary-900 text-white p-6 rounded-2xl shadow-xl">
+            <h4 className="text-xs font-black text-primary-300 uppercase tracking-widest mb-4">Focus Points</h4>
             <p className="text-sm opacity-80 mb-4 leading-relaxed">
               We'll focus on these validated strengths when reframing your history:
             </p>
             <div className="space-y-2">
               {highConfidenceSkills.map((s, i) => (
                 <div key={i} className="flex items-center gap-3 bg-white/10 px-3 py-2 rounded-lg border border-white/10 text-xs font-bold">
-                  <i className="fas fa-check-circle text-indigo-400"></i>
+                  <i className="fas fa-check-circle text-primary-400"></i>
                   {s.skill}
                 </div>
               ))}
               {highConfidenceSkills.length === 0 && (
-                <p className="text-xs text-indigo-300 italic">No high-confidence skills selected yet.</p>
+                <p className="text-xs text-primary-300 italic">No high-confidence skills selected yet.</p>
               )}
             </div>
           </div>

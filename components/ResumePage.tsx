@@ -204,7 +204,7 @@ ${(resume.suggestedSkills || []).join(', ')}
             </button>
             <button
               onClick={fetchResume}
-              className="px-8 py-4 bg-indigo-600 text-white rounded-full font-bold hover:bg-indigo-700 transition-all"
+              className="px-8 py-4 bg-primary-600 text-white rounded-full font-bold hover:bg-primary-700 transition-all"
             >
               <i className="fas fa-redo mr-2"></i> Try again
             </button>
@@ -233,21 +233,21 @@ ${(resume.suggestedSkills || []).join(', ')}
       subtitle={`Generated from your experience, tailored for a ${role.name} role.`}
     >
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex flex-wrap justify-between items-center gap-4 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-          <p className="text-sm text-indigo-900/80 font-medium">
+        <div className="flex flex-wrap justify-between items-center gap-4 bg-primary-50 p-4 rounded-xl border border-primary-100">
+          <p className="text-sm text-primary-900/80 font-medium">
             <i className="fas fa-check-circle text-green-500 mr-2"></i>
             Customized from your uploaded resume and experience.
           </p>
           <div className="flex items-center gap-2">
             <button
               onClick={fetchResume}
-              className="px-3 py-2 text-indigo-600 text-sm font-bold hover:bg-indigo-100 rounded-lg transition-colors"
+              className="px-3 py-2 text-primary-600 text-sm font-bold hover:bg-primary-100 rounded-lg transition-colors"
             >
               <i className="fas fa-sync-alt mr-1"></i> Regenerate
             </button>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-2 px-4 py-2 bg-white text-indigo-700 rounded-lg border border-indigo-200 font-bold text-sm hover:shadow-sm transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-white text-primary-700 rounded-lg border border-primary-200 font-bold text-sm hover:shadow-sm transition-all"
             >
               <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`}></i>
               {copied ? 'Copied!' : 'Copy'}
@@ -261,7 +261,7 @@ ${(resume.suggestedSkills || []).join(', ')}
               <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
                 {displayName}
               </h1>
-              <p className="text-indigo-600 font-bold uppercase tracking-widest text-sm mt-1">
+              <p className="text-primary-600 font-bold uppercase tracking-widest text-sm mt-1">
                 {role.name}
               </p>
               {(personalInfo?.contactEmail || personalInfo?.linkedIn) && (
@@ -289,7 +289,7 @@ ${(resume.suggestedSkills || []).join(', ')}
                 <ul className="space-y-2">
                   {bullets.map((bullet, i) => (
                     <li key={i} className="flex gap-2 text-gray-800 leading-relaxed">
-                      <span className="text-indigo-500 font-bold shrink-0">•</span>
+                      <span className="text-primary-500 font-bold shrink-0">•</span>
                       <span>{bullet}</span>
                     </li>
                   ))}
@@ -309,7 +309,7 @@ ${(resume.suggestedSkills || []).join(', ')}
                       <div key={i} className="flex items-center gap-2">
                         <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden shrink-0">
                           <div
-                            className="h-full bg-indigo-500 rounded-full"
+                            className="h-full bg-primary-500 rounded-full"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
@@ -326,7 +326,7 @@ ${(resume.suggestedSkills || []).join(', ')}
             {resume?.pivotPoints && resume.pivotPoints.length > 0 && (
               <section className="pt-6 border-t border-gray-100">
                 <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <i className="fas fa-arrows-alt-h text-indigo-400"></i>
+                  <i className="fas fa-arrows-alt-h text-primary-400"></i>
                   Reframing
                 </h2>
                 <div className="space-y-4">
@@ -338,7 +338,7 @@ ${(resume.suggestedSkills || []).join(', ')}
                           {p.original}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 text-indigo-400 my-1">
+                      <div className="flex items-center gap-2 text-primary-400 my-1">
                         <i className="fas fa-arrow-down text-xs"></i>
                       </div>
                       <div className="flex items-start gap-2 mb-2">
@@ -354,13 +354,13 @@ ${(resume.suggestedSkills || []).join(', ')}
                           e.stopPropagation();
                           setExpandedWhy(expandedWhy === i ? null : i);
                         }}
-                        className="text-xs text-indigo-600 font-medium hover:text-indigo-700 hover:underline cursor-pointer select-none mt-1 inline-flex items-center gap-1"
+                        className="text-xs text-primary-600 font-medium hover:text-primary-700 hover:underline cursor-pointer select-none mt-1 inline-flex items-center gap-1"
                       >
                         <i className={`fas fa-chevron-${expandedWhy === i ? 'up' : 'down'} text-[10px]`}></i>
                         {expandedWhy === i ? 'Hide why' : 'Why'}
                       </button>
                       {expandedWhy === i && (
-                        <p className="text-xs text-indigo-600 mt-2 pl-4 border-l-2 border-indigo-200">{p.why}</p>
+                        <p className="text-xs text-primary-600 mt-2 pl-4 border-l-2 border-primary-200">{p.why}</p>
                       )}
                     </div>
                   ))}
@@ -369,15 +369,15 @@ ${(resume.suggestedSkills || []).join(', ')}
             )}
 
             {guidanceBullets.length > 0 && (
-              <section className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-                <h2 className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+              <section className="bg-primary-50/50 p-4 rounded-xl border border-primary-100">
+                <h2 className="text-xs font-black text-primary-600 uppercase tracking-widest mb-3 flex items-center gap-2">
                   <i className="fas fa-lightbulb"></i>
                   Coach Tips
                 </h2>
                 <div className="space-y-2">
                   {guidanceBullets.map((tip, i) => (
                     <div key={i} className="flex gap-2 items-start">
-                      <span className="w-5 h-5 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                      <span className="w-5 h-5 rounded-full bg-primary-200 text-primary-700 flex items-center justify-center text-[10px] font-bold shrink-0">
                         {i + 1}
                       </span>
                       <p className="text-xs text-gray-700 leading-snug">{tip}</p>
@@ -392,7 +392,7 @@ ${(resume.suggestedSkills || []).join(', ')}
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden print:hidden">
           <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
             <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-              <i className="fas fa-comments text-indigo-500"></i>
+              <i className="fas fa-comments text-primary-500"></i>
               Ask for adjustments
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -411,7 +411,7 @@ ${(resume.suggestedSkills || []).join(', ')}
                 <div
                   className={`max-w-[85%] rounded-lg px-4 py-2 text-sm ${
                     m.role === 'user'
-                      ? 'bg-indigo-600 text-white'
+                      ? 'bg-primary-600 text-white'
                       : 'bg-gray-100 text-gray-800 border border-gray-200'
                   }`}
                 >
@@ -437,12 +437,12 @@ ${(resume.suggestedSkills || []).join(', ')}
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="Describe the changes you want..."
                 disabled={chatLoading}
-                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={chatLoading || !chatInput.trim()}
-                className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-5 py-2.5 bg-primary-600 text-white rounded-lg font-bold text-sm hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <i className="fas fa-paper-plane"></i>
               </button>

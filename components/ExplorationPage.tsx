@@ -156,15 +156,17 @@ const ExplorationPageInner: React.FC<ExplorationPageProps> = ({
 
           {/* Role cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {roles.map((role) => (
+            {roles.map((role, idx) => (
               <button
                 key={role.id}
                 onClick={() => setSelectedRole(role)}
-                className="bg-white rounded-2xl border border-gray-200 p-5 text-left hover:border-indigo-300 hover:shadow-md transition-colors transition-shadow duration-150"
+                className={`group bg-white rounded-2xl border p-5 text-left transition-all duration-150
+                  ${idx === 0 ? 'border-primary-100' : 'border-gray-200'}
+                  hover:border-primary-200 hover:bg-primary-50/30`}
               >
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <h3 className="text-lg font-bold text-gray-900">{role.name}</h3>
-                  <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-200/80 transition-colors">
                     <i className="fas fa-briefcase"></i>
                   </div>
                 </div>
@@ -175,7 +177,7 @@ const ExplorationPageInner: React.FC<ExplorationPageProps> = ({
                     <span className="font-bold">{role.why.length}</span>
                     <span className="text-gray-500">reasons</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-indigo-600">
+                  <div className="flex items-center gap-1.5 text-xs text-primary-600">
                     <i className="fas fa-lightbulb"></i>
                     <span className="font-bold">{role.assumptions.length}</span>
                     <span className="text-gray-500">assumptions</span>
@@ -187,8 +189,8 @@ const ExplorationPageInner: React.FC<ExplorationPageProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center text-sm text-indigo-600 font-semibold">
-                  Explore <i className="fas fa-arrow-right ml-2"></i>
+                <div className="flex items-center text-sm text-primary-600 font-medium group-hover:text-primary-700 transition-colors">
+                  Explore <i className="fas fa-arrow-right ml-2 opacity-80"></i>
                 </div>
               </button>
             ))}
@@ -216,9 +218,9 @@ const ExplorationPageInner: React.FC<ExplorationPageProps> = ({
             <button
               onClick={() => roles.length > 0 && onSelectRole(roles[0])}
               disabled={roles.length === 0}
-              className="px-8 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center"
+              className="px-8 py-3 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              Continue <i className="fas fa-arrow-right ml-2"></i>
+              Continue <i className="fas fa-arrow-right ml-2 opacity-90"></i>
             </button>
           </div>
         </div>
@@ -232,7 +234,7 @@ const ExplorationPageInner: React.FC<ExplorationPageProps> = ({
       <div className="space-y-6">
         <button
           onClick={() => setSelectedRole(null)}
-          className="text-sm text-gray-600 hover:text-gray-900 font-medium flex items-center"
+          className="text-sm text-gray-600 hover:text-primary-600 font-medium flex items-center transition-colors"
         >
           <i className="fas fa-arrow-left mr-2"></i> Back to all roles
         </button>
@@ -260,21 +262,21 @@ const ExplorationPageInner: React.FC<ExplorationPageProps> = ({
             </div>
           </div>
 
-          <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
-            <div className="text-xs font-bold uppercase tracking-widest text-indigo-700 mb-2 flex items-center gap-2">
+          <div className="bg-primary-50 border border-primary-200 rounded-2xl p-4">
+            <div className="text-xs font-bold uppercase tracking-widest text-primary-700 mb-2 flex items-center gap-2">
               <i className="fas fa-lightbulb"></i> Assumes
             </div>
             <div className="space-y-2">
               {(expandedAssumptions ? selectedRole.assumptions : selectedRole.assumptions.slice(0, 2)).map((a, i) => (
                 <div key={i} className="text-sm text-gray-800 flex items-start gap-2">
-                  <span className="text-indigo-600 mt-0.5 flex-shrink-0">•</span>
+                  <span className="text-primary-600 mt-0.5 flex-shrink-0">•</span>
                   <span className="flex-1 min-w-0 break-words">{a}</span>
                 </div>
               ))}
               {selectedRole.assumptions.length > 2 && (
                 <button
                   onClick={() => setExpandedAssumptions(!expandedAssumptions)}
-                  className="text-xs text-indigo-600 hover:text-indigo-800 font-medium cursor-pointer text-left"
+                  className="text-xs text-primary-600 hover:text-primary-800 font-medium cursor-pointer text-left"
                 >
                   {expandedAssumptions ? '− Show less' : `+${selectedRole.assumptions.length - 2} more`}
                 </button>
@@ -305,20 +307,20 @@ const ExplorationPageInner: React.FC<ExplorationPageProps> = ({
           </div>
         </div>
 
-        <div className="pt-6 border-t border-gray-100 flex flex-col items-center gap-4">
+        <div className="pt-6 border-t border-warm-200 flex flex-col items-center gap-4">
           <button
             onClick={() => onSelectRole(selectedRole)}
-            className="w-full md:w-auto px-10 py-4 bg-indigo-600 text-white rounded-full font-bold hover:bg-indigo-700 transition-colors duration-200 shadow-lg"
+            className="w-full md:w-auto px-10 py-4 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-colors duration-200"
           >
-            Explore this role <i className="fas fa-arrow-right ml-2"></i>
+            Explore this role <i className="fas fa-arrow-right ml-2 opacity-90"></i>
           </button>
 
           <div className="flex items-center gap-4 text-sm text-gray-500">
-            <button onClick={() => setSelectedRole(null)} className="hover:text-gray-700">
+            <button onClick={() => setSelectedRole(null)} className="hover:text-primary-600 transition-colors">
               See other roles
             </button>
-            <span>•</span>
-            <button onClick={() => onExit('unsure')} className="hover:text-gray-700">
+            <span className="text-gray-300">•</span>
+            <button onClick={() => onExit('unsure')} className="hover:text-gray-700 transition-colors">
               Not sure
             </button>
           </div>

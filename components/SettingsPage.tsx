@@ -85,14 +85,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
                 onClick={() => handleLanguageChange(lang)}
                 className={`w-full flex items-center justify-between p-4 rounded-xl border transition-colors ${
                   currentLang === lang
-                    ? 'border-indigo-500 bg-indigo-50'
-                    : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
+                    ? 'border-primary-500 bg-primary-50'
+                    : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                     currentLang === lang
-                      ? 'bg-indigo-500 text-white'
+                      ? 'bg-primary-500 text-white'
                       : 'bg-gray-100 text-gray-600'
                   }`}>
                     <i className={`fas ${currentLang === lang ? 'fa-check' : 'fa-circle'}`}></i>
@@ -107,7 +107,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
                   </div>
                 </div>
                 {currentLang === lang && (
-                  <i className="fas fa-check-circle text-indigo-500"></i>
+                  <i className="fas fa-check-circle text-primary-500"></i>
                 )}
               </button>
             ))}
@@ -117,7 +117,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
         {/* Account Section */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center">
               <i className="fas fa-user text-xl"></i>
             </div>
             <div>
@@ -166,7 +166,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
         {/* Data Management Section */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-accent-100 text-accent-600 flex items-center justify-center">
               <i className="fas fa-database text-xl"></i>
             </div>
             <div>
@@ -179,10 +179,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
             <button
               onClick={handleExportData}
               disabled={historyCount === 0}
-              className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+              className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                <div className="w-10 h-10 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center group-hover:bg-primary-200 transition-colors">
                   <i className="fas fa-download"></i>
                 </div>
                 <div className="text-left">

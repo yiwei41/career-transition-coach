@@ -226,7 +226,7 @@ export const DecisionPage: React.FC<DecisionPageProps> = ({
           </div>
 
           <div className="bg-gray-900 rounded-3xl p-6 shadow-2xl relative border border-white/5">
-            <div className="flex items-center gap-3 text-[9px] font-mono text-indigo-400 uppercase tracking-widest mb-4">
+            <div className="flex items-center gap-3 text-[9px] font-mono text-accent-500 uppercase tracking-widest mb-4">
               <i className="fas fa-terminal"></i>
               Strategic Reasoning Console
             </div>
@@ -240,7 +240,7 @@ export const DecisionPage: React.FC<DecisionPageProps> = ({
                 ))}
               </div>
             </div>
-            <div className="absolute top-0 left-0 w-full h-[1px] bg-indigo-500/10 shadow-[0_0_10px_rgba(99,102,241,0.5)] animate-[scanTerminal_3s_linear_infinite]"></div>
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-accent-500/10 shadow-[0_0_10px_rgba(79,70,229,0.3)] animate-[scanTerminal_3s_linear_infinite]"></div>
           </div>
         </div>
 
@@ -297,7 +297,7 @@ export const DecisionPage: React.FC<DecisionPageProps> = ({
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center shadow-lg">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-accent-500 text-white flex items-center justify-center shadow-lg">
                 <i className="fas fa-briefcase text-2xl"></i>
               </div>
               <div>
@@ -473,15 +473,15 @@ export const DecisionPage: React.FC<DecisionPageProps> = ({
             </div>
 
             <div className="relative">
-              <div className="absolute left-5 top-6 bottom-6 w-0.5 bg-gradient-to-b from-indigo-300 via-violet-300 to-purple-300 hidden md:block"></div>
+              <div className="absolute left-5 top-6 bottom-6 w-0.5 bg-gradient-to-b from-indigo-300 via-accent-300 to-purple-300 hidden md:block"></div>
 
               <div className="space-y-4">
                 {decision.suggestedNextSteps.map((step, i) => {
                   const stepConfigs = [
                     { icon: 'fa-comments', bg: 'bg-gradient-to-br from-indigo-500 to-indigo-600', label: 'text-indigo-600' },
-                    { icon: 'fa-book-open', bg: 'bg-gradient-to-br from-violet-500 to-violet-600', label: 'text-violet-600' },
+                    { icon: 'fa-book-open', bg: 'bg-gradient-to-br from-accent-500 to-accent-600', label: 'text-accent-600' },
                     { icon: 'fa-hands-helping', bg: 'bg-gradient-to-br from-purple-500 to-purple-600', label: 'text-purple-600' },
-                    { icon: 'fa-magnifying-glass', bg: 'bg-gradient-to-br from-fuchsia-500 to-fuchsia-600', label: 'text-fuchsia-600' },
+                    { icon: 'fa-magnifying-glass', bg: 'bg-gradient-to-br from-accent-500 to-accent-600', label: 'text-accent-600' },
                   ];
                   const cfg = stepConfigs[i % stepConfigs.length];
 

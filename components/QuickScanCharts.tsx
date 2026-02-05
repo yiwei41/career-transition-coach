@@ -53,7 +53,7 @@ export const QuickScanCharts: React.FC<QuickScanChartsProps> = ({ preview }) => 
   return (
     <div className="space-y-8">
       {/* Pie Chart */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6">
+      <div className="rounded-2xl border border-warm-200 bg-white p-6">
           <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
           <i className="fas fa-chart-pie"></i> Distribution
         </h3>
@@ -63,7 +63,7 @@ export const QuickScanCharts: React.FC<QuickScanChartsProps> = ({ preview }) => 
               {clearPercent > 0 && (
                 <path
                   d={getPieSlice(clearStart, clearEnd)}
-                  fill="#06b6d4"
+                  fill="#0d9488"
                   stroke="white"
                   strokeWidth="2"
                 />
@@ -71,7 +71,7 @@ export const QuickScanCharts: React.FC<QuickScanChartsProps> = ({ preview }) => 
               {assumptionsPercent > 0 && (
                 <path
                   d={getPieSlice(assumptionsStart, assumptionsEnd)}
-                  fill="#8b5cf6"
+                  fill="#4f46e5"
                   stroke="white"
                   strokeWidth="2"
                 />
@@ -88,7 +88,7 @@ export const QuickScanCharts: React.FC<QuickScanChartsProps> = ({ preview }) => 
           </div>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-4 h-4 rounded-full bg-cyan-500"></div>
+              <div className="w-4 h-4 rounded-full bg-primary-600"></div>
               <div>
                 <div className="text-sm font-semibold text-gray-900">Clear</div>
                 <div className="text-xs text-gray-500">{clearCount} items ({clearPercent.toFixed(0)}%)</div>
@@ -115,8 +115,8 @@ export const QuickScanCharts: React.FC<QuickScanChartsProps> = ({ preview }) => 
       {/* Key Insights & Next Steps */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Focus Areas */}
-        <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-blue-50 to-white p-6">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-blue-600 mb-4 flex items-center gap-2">
+        <div className="rounded-2xl border border-warm-200 bg-gradient-to-br from-primary-50 to-white p-6">
+          <h3 className="text-sm font-bold uppercase tracking-widest text-primary-600 mb-4 flex items-center gap-2">
             <i className="fas fa-compass"></i> Areas to Explore
           </h3>
           <div className="space-y-3">
@@ -126,8 +126,8 @@ export const QuickScanCharts: React.FC<QuickScanChartsProps> = ({ preview }) => 
                   <span className="font-semibold text-blue-600">{unclearCount}</span> area{unclearCount > 1 ? 's' : ''} to explore.
                 </p>
                 {preview.unclear.length > 0 && (
-                  <div className="mt-3 p-3 bg-white rounded-lg border border-blue-100">
-                    <p className="text-xs font-medium text-blue-700 mb-2">Explore:</p>
+                  <div className="mt-3 p-3 bg-white rounded-lg border border-primary-100">
+                    <p className="text-xs font-medium text-primary-700 mb-2">Explore:</p>
                     <p className="text-sm text-gray-800">{preview.unclear[0]}</p>
                   </div>
                 )}
@@ -139,22 +139,22 @@ export const QuickScanCharts: React.FC<QuickScanChartsProps> = ({ preview }) => 
         </div>
 
         {/* Strengths Summary */}
-        <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-violet-50 to-white p-6">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-violet-700 mb-4 flex items-center gap-2">
+        <div className="rounded-2xl border border-warm-200 bg-gradient-to-br from-accent-50 to-white p-6">
+          <h3 className="text-sm font-bold uppercase tracking-widest text-accent-700 mb-4 flex items-center gap-2">
             <i className="fas fa-lightbulb"></i> Your Strengths
           </h3>
           <div className="space-y-3">
             {assumptionsCount > 0 ? (
               <>
                 <p className="text-sm text-gray-700 font-medium">
-                  <span className="font-bold text-violet-700">{assumptionsCount}</span> strength{assumptionsCount > 1 ? 's' : ''}.
+                  <span className="font-bold text-accent-700">{assumptionsCount}</span> strength{assumptionsCount > 1 ? 's' : ''}.
                 </p>
                 {preview.assumptions.length > 0 && (
-                  <div className="mt-3 p-3 bg-white rounded-lg border border-violet-200">
+                  <div className="mt-3 p-3 bg-white rounded-lg border border-accent-100">
                     <ul className="space-y-2">
                       {preview.assumptions.map((item, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-gray-800">
-                          <span className="font-semibold text-violet-700 flex-shrink-0">{i + 1}.</span>
+                          <span className="font-semibold text-accent-700 flex-shrink-0">{i + 1}.</span>
                           <span>{item}</span>
                         </li>
                       ))}
@@ -171,8 +171,8 @@ export const QuickScanCharts: React.FC<QuickScanChartsProps> = ({ preview }) => 
 
       {/* Detailed Lists (collapsible) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <details className="rounded-2xl border border-gray-200 bg-gray-50 p-5 hover:bg-gray-100 transition-colors">
-          <summary className="text-xs font-bold uppercase tracking-widest text-cyan-700 flex items-center gap-2 mb-3 cursor-pointer list-none">
+        <details className="rounded-2xl border border-warm-200 bg-gray-50 p-5 hover:bg-gray-100 transition-colors">
+          <summary className="text-xs font-bold uppercase tracking-widest text-primary-700 flex items-center gap-2 mb-3 cursor-pointer list-none">
             <i className="fas fa-check-circle"></i> Clear ({clearCount})
             <i className="fas fa-chevron-down ml-auto text-xs"></i>
           </summary>
@@ -186,8 +186,8 @@ export const QuickScanCharts: React.FC<QuickScanChartsProps> = ({ preview }) => 
           </ul>
         </details>
 
-        <details className="rounded-2xl border border-gray-200 bg-gray-50 p-5 hover:bg-gray-100 transition-colors">
-          <summary className="text-xs font-bold uppercase tracking-widest text-violet-700 flex items-center gap-2 mb-3 cursor-pointer list-none">
+        <details className="rounded-2xl border border-warm-200 bg-gray-50 p-5 hover:bg-gray-100 transition-colors">
+          <summary className="text-xs font-bold uppercase tracking-widest text-accent-700 flex items-center gap-2 mb-3 cursor-pointer list-none">
             <i className="fas fa-lightbulb"></i> Strengths ({assumptionsCount})
             <i className="fas fa-chevron-down ml-auto text-xs"></i>
           </summary>
@@ -201,7 +201,7 @@ export const QuickScanCharts: React.FC<QuickScanChartsProps> = ({ preview }) => 
           </ul>
         </details>
 
-        <details className="rounded-2xl border border-gray-200 bg-gray-50 p-5 hover:bg-gray-100 transition-colors">
+        <details className="rounded-2xl border border-warm-200 bg-gray-50 p-5 hover:bg-gray-100 transition-colors">
           <summary className="text-xs font-bold uppercase tracking-widest text-amber-700 flex items-center gap-2 mb-3 cursor-pointer list-none">
             <i className="fas fa-question-circle"></i> Unknowns ({unclearCount})
             <i className="fas fa-chevron-down ml-auto text-xs"></i>

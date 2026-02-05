@@ -94,9 +94,9 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({
       <div className="min-h-[80vh] flex items-center justify-center px-4">
         <div className="w-full max-w-xl">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-indigo-50 text-indigo-600 mb-6 relative overflow-hidden">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-primary-50 text-primary-600 mb-6 relative overflow-hidden">
               <i className={`fas ${ANALYSIS_STEPS[activeStep].icon} text-3xl z-10 animate-bounce`}></i>
-              <div className="absolute inset-0 bg-indigo-100/50 animate-pulse"></div>
+              <div className="absolute inset-0 bg-primary-100/50 animate-pulse"></div>
             </div>
             <h2 className="text-2xl font-black text-gray-900 mb-2">Analysis Engine Active</h2>
             <p className="text-gray-500 italic">{ANALYSIS_STEPS[activeStep].description}</p>
@@ -112,23 +112,23 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({
               >
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-                    idx <= activeStep ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-200 text-gray-300'
+                    idx <= activeStep ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-200 text-gray-300'
                   }`}
                 >
                   {idx < activeStep ? <i className="fas fa-check text-xs"></i> : <span className="text-xs font-bold">{step.id}</span>}
                 </div>
                 <div className="flex-grow">
                   <div className="flex justify-between items-center mb-1">
-                    <span className={`text-sm font-bold uppercase tracking-widest ${idx === activeStep ? 'text-indigo-600' : 'text-gray-500'}`}>
+                    <span className={`text-sm font-bold uppercase tracking-widest ${idx === activeStep ? 'text-primary-600' : 'text-gray-500'}`}>
                       {step.label}
                     </span>
                     {idx === activeStep && (
-                      <span className="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded font-black animate-pulse">PROCESSING</span>
+                      <span className="text-[10px] bg-primary-100 text-primary-600 px-2 py-0.5 rounded font-black animate-pulse">PROCESSING</span>
                     )}
                   </div>
                   <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full bg-indigo-600 transition-all duration-1000 ease-out ${
+                      className={`h-full bg-primary-600 transition-all duration-1000 ease-out ${
                         idx === activeStep ? 'w-1/2' : idx < activeStep ? 'w-full' : 'w-0'
                       }`}
                     ></div>
@@ -144,7 +144,7 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({
               Neural Bridge Connection: Established
             </div>
             <div className="mt-2 h-16 overflow-hidden relative">
-              <div className="text-[10px] font-mono text-indigo-400/60 space-y-1 animate-[slideUp_10s_linear_infinite]">
+              <div className="text-[10px] font-mono text-primary-400/60 space-y-1 animate-[slideUp_10s_linear_infinite]">
                 <p>&gt; fetch market_data --role="{role.name}"</p>
                 <p>&gt; parsing experience_summary --origin="{context.origin}"</p>
                 <p>&gt; cross_referencing skills[transferable]</p>
@@ -213,7 +213,7 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({
                 onClick={() => setFilter('unsure')}
                 className={`px-4 py-2 rounded-full text-sm font-bold border transition-all ${
                   filter === 'unsure'
-                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    ? 'bg-primary-600 text-white border-primary-600'
                     : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -244,7 +244,7 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({
                 <i className="fas fa-check-circle text-green-600"></i>Confident
               </span>
               <span className="flex items-center gap-1.5">
-                <i className="fas fa-question-circle text-indigo-600"></i>Unsure
+                <i className="fas fa-question-circle text-primary-600"></i>Unsure
               </span>
               <span className="flex items-center gap-1.5">
                 <i className="fas fa-circle-minus text-red-600"></i>Gap
@@ -257,7 +257,7 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({
           {filteredSkills.map(({ s, idx }) => {
             const isOpen = expanded.has(idx);
             const confidenceStyles =
-              s.confidence === 'high' ? 'bg-green-50 border-green-200' : s.confidence === 'gap' ? 'bg-red-50 border-red-200' : 'bg-indigo-50 border-indigo-200';
+              s.confidence === 'high' ? 'bg-green-50 border-green-200' : s.confidence === 'gap' ? 'bg-red-50 border-red-200' : 'bg-primary-50 border-primary-200';
 
             return (
               <div key={idx} className={`rounded-2xl border p-5 bg-white shadow-sm ${confidenceStyles}`}>
@@ -292,7 +292,7 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({
                       <button
                         onClick={() => updateConfidence(idx, 'unsure')}
                         className={`px-3 py-2 rounded-xl text-sm font-bold transition-all ${
-                          s.confidence === 'unsure' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'
+                          s.confidence === 'unsure' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-50'
                         }`}
                       >
                         <i className="fas fa-question-circle mr-2"></i>Unsure
@@ -334,7 +334,7 @@ export const ValidationPage: React.FC<ValidationPageProps> = ({
           </button>
           <button
             onClick={onNext}
-            className="px-8 py-4 bg-indigo-600 text-white rounded-full font-bold hover:bg-indigo-700 transition-all shadow-lg transform hover:-translate-y-1"
+            className="px-8 py-4 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-colors"
           >
             Continue to decision support
             <i className="fas fa-arrow-right ml-2"></i>
