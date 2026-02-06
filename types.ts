@@ -15,6 +15,7 @@ export interface UserContext {
 
 export interface UserExperienceInput {
   rawExperience: string;
+  fullName?: string;
   contactEmail?: string;
   linkedIn?: string;
 }
@@ -50,9 +51,20 @@ export interface DecisionSupport {
 
 export interface ResumeDraft {
   summary: string;
+  experienceBullets: string[];
   pivotPoints: { original: string; reframed: string; why: string }[];
   suggestedSkills: string[];
   experienceGuidance: string;
 }
 
-export type Page = 'builder' | 'exploration' | 'validation' | 'decision' | 'resume-form' | 'resume' | 'exit';
+export interface HistoryRecord {
+  id: string;
+  timestamp: number;
+  role: RoleCard;
+  context: UserContext;
+  skills: SkillMapping[];
+  decision?: DecisionSupport;
+  completed: boolean;
+}
+
+export type Page = 'intro' | 'builder' | 'exploration' | 'validation' | 'decision' | 'resume-form' | 'resume' | 'history' | 'exit';

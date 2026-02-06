@@ -1,8 +1,9 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { UserContext, RoleCard } from '../types';
 import { generateRolePossibilities } from '../geminiService';
 import { StepLayout } from './StepLayout';
+import { AnalysisProgressDisplay } from './AnalysisProgressDisplay';
 
 interface ExplorationPageProps {
   context: UserContext;
@@ -10,213 +11,325 @@ interface ExplorationPageProps {
   onRolesFetched: (roles: RoleCard[]) => void;
   onSelectRole: (role: RoleCard) => void;
   onExit: (type: 'not_for_me' | 'unsure') => void;
+  onBack?: () => void;
 }
 
-const SYNTHESIS_STEPS = [
-  { id: 1, label: 'Context Distillation', icon: 'fa-filter', description: 'Extracting core value from your background...' },
-  { id: 2, label: 'Directional Analysis', icon: 'fa-compass', description: 'Aligning origin background with target aspirations...' },
-  { id: 3, label: 'Possibility Mapping', icon: 'fa-diagram-project', description: 'Generating role hypotheses that bridge the gap...' },
-  { id: 4, label: 'Constraint Checking', icon: 'fa-shield-halved', description: 'Applying real-world market constraints and expectations...' },
-  { id: 5, label: 'Role Synthesis', icon: 'fa-wand-magic-sparkles', description: 'Finalizing your exploration dashboard...' },
-];
-
-export const ExplorationPage: React.FC<ExplorationPageProps> = ({ context, cachedRoles, onRolesFetched, onSelectRole, onExit }) => {
+const ExplorationPageInner: React.FC<ExplorationPageProps> = ({
+  context,
+  cachedRoles,
+  onRolesFetched,
+  onSelectRole,
+  onExit,
+  onBack,
+}) => {
   const [roles, setRoles] = useState<RoleCard[]>(cachedRoles || []);
-  const [loading, setLoading] = useState(!cachedRoles);
-  const [activeStep, setActiveStep] = useState(0);
+  const [loading, setLoading] = useState<boolean>(() => !(cachedRoles && cachedRoles.length > 0));
 
+  const [selectedRole, setSelectedRole] = useState<RoleCard | null>(null);
+
+  // loading animation states
+  const [analysisStep, setAnalysisStep] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  // detail expand states
+  const [expandedWhy, setExpandedWhy] = useState(false);
+  const [expandedAssumptions, setExpandedAssumptions] = useState(false);
+  const [expandedUncertainties, setExpandedUncertainties] = useState(false);
+
+  const synthesisSteps = useMemo(
+    () => [
+      { id: 'context', label: 'CONTEXT DISTILLATION', progress: 20 },
+      { id: 'directional', label: 'DIRECTIONAL ANALYSIS', progress: 40 },
+      { id: 'possibility', label: 'POSSIBILITY MAPPING', progress: 60 },
+      { id: 'constraint', label: 'CONSTRAINT CHECKING', progress: 80 },
+      { id: 'role', label: 'ROLE SYNTHESIS', progress: 95 },
+    ],
+    []
+  );
+
+  const synthesisConsoleLogs = useMemo(
+    () => [
+      { text: 'QUERYING MARKET_TAXONOMY: PIVOT_PATH_ALPHA' },
+      { text: 'GENERATING HYPOTHESIS: ADJACENT_ROLE_MATCH', highlight: true },
+      { text: 'OPTIMIZING ASSET_REUSE_RATIO...' },
+      { text: `MAPPING CONTEXT: ${context.origin} → ${context.considering.join(', ')}` },
+      { text: 'FINALIZING ROLE RECOMMENDATIONS...' },
+    ],
+    [context.origin, context.considering]
+  );
+
+  // Reset expanded state when switching roles
   useEffect(() => {
-    let stepInterval: number;
-    if (loading) {
-      stepInterval = window.setInterval(() => {
-        setActiveStep((prev) => (prev < SYNTHESIS_STEPS.length - 1 ? prev + 1 : prev));
-      }, 1800);
+    setExpandedWhy(false);
+    setExpandedAssumptions(false);
+    setExpandedUncertainties(false);
+  }, [selectedRole?.id]);
+
+  // Fetch roles (with caching)
+  useEffect(() => {
+    let cancelled = false;
+
+    const hasCache = cachedRoles && cachedRoles.length > 0;
+    if (hasCache) {
+      setRoles(cachedRoles);
+      setLoading(false);
+      return;
     }
 
-    if (!cachedRoles) {
-      const fetchRoles = async () => {
-        try {
-          const res = await generateRolePossibilities(context);
-          // Ensure minimum duration for the animation to feel meaningful
-          await new Promise(resolve => setTimeout(resolve, 4000));
-          setRoles(res);
-          onRolesFetched(res);
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setLoading(false);
-          if (stepInterval) clearInterval(stepInterval);
-        }
-      };
-      fetchRoles();
-    }
+    const fetchRoles = async () => {
+      setLoading(true);
+      try {
+        const res = await generateRolePossibilities(context);
+        // brief minimum delay so loading animation doesn't flash
+        await new Promise((r) => setTimeout(r, 350));
+        if (cancelled) return;
+        setRoles(res);
+        onRolesFetched(res);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchRoles();
+    return () => {
+      cancelled = true;
+    };
+  }, [context, cachedRoles, onRolesFetched]);
+
+  // Rotate through analysis steps while loading
+  useEffect(() => {
+    if (!loading) return;
+
+    const stepInterval = window.setInterval(() => {
+      setAnalysisStep((prev) => {
+        const next = prev + 1;
+        return next >= synthesisSteps.length ? prev : next;
+      });
+    }, 2000);
+
+    const timeInterval = window.setInterval(() => {
+      setElapsedTime((prev) => prev + 1);
+    }, 1000);
 
     return () => {
-      if (stepInterval) clearInterval(stepInterval);
+      clearInterval(stepInterval);
+      clearInterval(timeInterval);
     };
-  }, [context, cachedRoles, onRolesFetched, loading]);
+  }, [loading]);
 
   if (loading) {
+    const activeProgress = 60 + (elapsedTime % 4) * 10;
     return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4">
-        <div className="w-full max-w-xl">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-[2rem] bg-indigo-900 text-white mb-8 relative shadow-2xl shadow-indigo-200 overflow-hidden">
-               <i className={`fas ${SYNTHESIS_STEPS[activeStep].icon} text-4xl z-10 transition-transform duration-500 scale-110`}></i>
-               <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-700 animate-pulse"></div>
-               <div className="absolute inset-0 border-4 border-white/20 rounded-[2rem]"></div>
-            </div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight uppercase">Synthesis Engine</h2>
-            <p className="text-gray-500 font-medium italic">{SYNTHESIS_STEPS[activeStep].description}</p>
-          </div>
-
-          <div className="space-y-6">
-            {SYNTHESIS_STEPS.map((step, idx) => (
-              <div 
-                key={step.id} 
-                className={`flex items-center gap-5 transition-all duration-700 ${idx === activeStep ? 'scale-105 opacity-100' : idx < activeStep ? 'opacity-40 scale-95' : 'opacity-10 scale-90'}`}
-              >
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 transition-colors duration-500 ${
-                  idx <= activeStep ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-gray-100 text-gray-200'
-                }`}>
-                  {idx < activeStep ? <i className="fas fa-check text-sm"></i> : <i className={`fas ${step.icon} text-xs`}></i>}
-                </div>
-                <div className="flex-grow">
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className={`text-xs font-black uppercase tracking-[0.2em] ${idx === activeStep ? 'text-indigo-600' : 'text-gray-400'}`}>
-                      {step.label}
-                    </span>
-                    {idx === activeStep && (
-                      <div className="flex items-center gap-1.5">
-                         <span className="relative flex h-2 w-2">
-                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                           <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                         </span>
-                         <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Active</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full bg-indigo-600 transition-all duration-[2000ms] ease-in-out ${idx === activeStep ? 'w-3/4' : idx < activeStep ? 'w-full' : 'w-0'}`}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-16 bg-gray-900 rounded-3xl p-6 shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-              <i className="fas fa-microchip text-6xl text-white"></i>
-            </div>
-            <div className="flex items-center gap-3 text-[10px] font-mono text-indigo-300 uppercase tracking-widest mb-4">
-              <span className="flex h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
-              Neural Network Reasoning Layer
-            </div>
-            <div className="h-20 overflow-hidden relative">
-              <div className="text-[10px] font-mono text-gray-400/80 space-y-1.5 animate-[scrollUp_12s_linear_infinite]">
-                <p className="text-indigo-400 font-bold">&gt; INITIALIZING ROLE_ENGINE_V4</p>
-                <p className="text-gray-500">&gt; DECODING ORIGIN_CONTEXT: {context.origin}</p>
-                <p className="text-gray-500">&gt; MAPPING DIRECTIONS: {context.considering.join(", ")}</p>
-                <p className="text-gray-500">&gt; EVALUATING FRICTION_NODES: {context.frictionPoints.length} points detected</p>
-                <p className="text-gray-500">&gt; QUERYING MARKET_TAXONOMY: PIVOT_PATH_ALPHA</p>
-                <p className="text-indigo-400">&gt; GENERATING HYPOTHESIS: ADJACENT_ROLE_MATCH</p>
-                <p className="text-gray-500">&gt; OPTIMIZING ASSET_REUSE_RATIO...</p>
-                <p className="text-gray-500">&gt; CALCULATING PIVOT_VELOCITY...</p>
-                <p className="text-green-400 font-bold">&gt; STATUS: SYNTHESIS_READY_FOR_VALIDATION</p>
-                <p className="text-gray-500">&gt; PREPARING POSSIBILITY_CARDS...</p>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
-              <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-transparent to-transparent"></div>
-            </div>
-          </div>
-        </div>
-        <style>{`
-          @keyframes scrollUp {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-100%); }
-          }
-        `}</style>
-      </div>
+      <StepLayout title="" subtitle="">
+        <AnalysisProgressDisplay
+          title="SYNTHESIS ENGINE"
+          subtitle="Finalizing your exploration dashboard..."
+          steps={synthesisSteps}
+          currentStepIndex={analysisStep}
+          activeStepProgress={activeProgress}
+          consoleTitle="NEURAL NETWORK REASONING LAYER"
+          consoleLogs={synthesisConsoleLogs}
+          activeStatus="ACTIVE"
+        />
+      </StepLayout>
     );
   }
 
-  return (
-    <StepLayout 
-      title="Let’s explore what this transition could look like."
-      subtitle="These are not recommendations — just possibilities worth examining."
-    >
-      <div className="mb-10 p-6 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Based on what we know so far</h3>
-          <div className="flex flex-wrap gap-4 text-sm text-gray-700">
-            <span className="bg-gray-100 px-3 py-1 rounded-full"><i className="fas fa-sign-out-alt mr-2"></i> {context.origin}</span>
-            <span className="bg-gray-100 px-3 py-1 rounded-full"><i className="fas fa-compass mr-2"></i> Considering {context.considering.join(", ")}</span>
+  // Role overview screen
+  if (!selectedRole) {
+    return (
+      <StepLayout title="Role possibilities" subtitle="Pick one to explore. You can change later.">
+        <div className="space-y-6">
+          {/* Context chips */}
+          <div className="flex flex-wrap gap-2 text-xs">
+            <span className="bg-gray-100 px-3 py-1 rounded-full text-gray-600">
+              <i className="fas fa-sign-out-alt mr-1.5"></i>
+              {context.origin}
+            </span>
+            <span className="bg-gray-100 px-3 py-1 rounded-full text-gray-600">
+              <i className="fas fa-compass mr-1.5"></i>
+              {context.considering.slice(0, 2).join(', ')}
+            </span>
+          </div>
+
+          {/* Role cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {roles.map((role, idx) => (
+              <button
+                key={role.id}
+                onClick={() => setSelectedRole(role)}
+                className={`group bg-white rounded-2xl border p-5 text-left transition-all duration-150
+                  ${idx === 0 ? 'border-primary-100' : 'border-gray-200'}
+                  hover:border-primary-200 hover:bg-primary-50/30`}
+              >
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <h3 className="text-lg font-bold text-gray-900">{role.name}</h3>
+                  <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-200/80 transition-colors">
+                    <i className="fas fa-briefcase"></i>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex items-center gap-1.5 text-xs text-green-600">
+                    <i className="fas fa-check-circle"></i>
+                    <span className="font-bold">{role.why.length}</span>
+                    <span className="text-gray-500">reasons</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-primary-600">
+                    <i className="fas fa-lightbulb"></i>
+                    <span className="font-bold">{role.assumptions.length}</span>
+                    <span className="text-gray-500">assumptions</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-orange-600">
+                    <i className="fas fa-question-circle"></i>
+                    <span className="font-bold">{role.uncertainties.length}</span>
+                    <span className="text-gray-500">unknowns</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center text-sm text-primary-600 font-medium group-hover:text-primary-700 transition-colors">
+                  Explore <i className="fas fa-arrow-right ml-2 opacity-80"></i>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Navigation */}
+          <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
+            <button
+              onClick={onBack}
+              className="px-5 py-2 text-gray-600 hover:text-gray-900 font-bold flex items-center"
+            >
+              <i className="fas fa-arrow-left mr-2"></i> Back
+            </button>
+
+            <div className="flex items-center gap-4">
+              <button onClick={() => onExit('unsure')} className="text-sm text-gray-500 hover:text-gray-700 font-medium">
+                Not sure yet
+              </button>
+              <span className="text-gray-300">•</span>
+              <button onClick={() => onExit('not_for_me')} className="text-sm text-gray-500 hover:text-gray-700 font-medium">
+                Skip for now
+              </button>
+            </div>
+
+            <button
+              onClick={() => roles.length > 0 && onSelectRole(roles[0])}
+              disabled={roles.length === 0}
+              className="px-8 py-3 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              Continue <i className="fas fa-arrow-right ml-2 opacity-90"></i>
+            </button>
           </div>
         </div>
-      </div>
+      </StepLayout>
+    );
+  }
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
-        {roles.map((role) => (
-          <div key={role.id} className="bg-white rounded-2xl border border-gray-100 shadow-lg hover:shadow-xl transition-shadow overflow-hidden flex flex-col h-full">
-            <div className="p-6 flex-grow">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">{role.name}</h3>
-              
-              <div className="space-y-6">
-                <div>
-                  <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">Why this might make sense</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    {role.why.map((w, i) => <li key={i} className="flex items-start"><i className="fas fa-check text-indigo-400 mt-1 mr-2 text-[10px]"></i>{w}</li>)}
-                  </ul>
-                </div>
+  // Role detail screen
+  return (
+    <StepLayout title={selectedRole.name} subtitle="Quick scan. One action.">
+      <div className="space-y-6">
+        <button
+          onClick={() => setSelectedRole(null)}
+          className="text-sm text-gray-600 hover:text-primary-600 font-medium flex items-center transition-colors"
+        >
+          <i className="fas fa-arrow-left mr-2"></i> Back to all roles
+        </button>
 
-                <div>
-                  <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-2">This path assumes that...</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    {role.assumptions.map((a, i) => <li key={i} className="flex items-start"><i className="fas fa-circle text-indigo-400 mt-1.5 mr-2 text-[6px]"></i>{a}</li>)}
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="text-xs font-bold text-orange-600 uppercase tracking-widest mb-2">What we don't know yet</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    {role.uncertainties.map((u, i) => <li key={i} className="flex items-start"><i className="fas fa-question text-orange-400 mt-1 mr-2 text-[10px]"></i>{u}</li>)}
-                  </ul>
-                </div>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
+            <div className="text-xs font-bold uppercase tracking-widest text-green-700 mb-2 flex items-center gap-2">
+              <i className="fas fa-check-circle"></i> Makes sense
             </div>
-
-            <div className="bg-gray-50 p-4 border-t border-gray-100 grid grid-cols-3 gap-2">
-              <button 
-                onClick={() => onSelectRole(role)}
-                className="flex flex-col items-center justify-center py-2 px-1 rounded-xl hover:bg-green-50 border border-transparent hover:border-green-200 transition-all text-gray-600 hover:text-green-700"
-              >
-                <i className="fas fa-thumbs-up text-lg mb-1"></i>
-                <span className="text-[10px] font-bold uppercase">Worth exploring</span>
-              </button>
-              <button 
-                onClick={() => onExit('unsure')}
-                className="flex flex-col items-center justify-center py-2 px-1 rounded-xl hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-all text-gray-600 hover:text-blue-700"
-              >
-                <i className="fas fa-meh text-lg mb-1"></i>
-                <span className="text-[10px] font-bold uppercase">Not sure yet</span>
-              </button>
-              <button 
-                onClick={() => onExit('not_for_me')}
-                className="flex flex-col items-center justify-center py-2 px-1 rounded-xl hover:bg-red-50 border border-transparent hover:border-red-200 transition-all text-gray-600 hover:text-red-700"
-              >
-                <i className="fas fa-thumbs-down text-lg mb-1"></i>
-                <span className="text-[10px] font-bold uppercase">Probably not</span>
-              </button>
+            <div className="space-y-2">
+              {(expandedWhy ? selectedRole.why : selectedRole.why.slice(0, 2)).map((w, i) => (
+                <div key={i} className="text-sm text-gray-800 flex items-start gap-2">
+                  <span className="text-green-600 mt-0.5 flex-shrink-0">•</span>
+                  <span className="flex-1 min-w-0 break-words">{w}</span>
+                </div>
+              ))}
+              {selectedRole.why.length > 2 && (
+                <button
+                  onClick={() => setExpandedWhy(!expandedWhy)}
+                  className="text-xs text-green-600 hover:text-green-800 font-medium cursor-pointer text-left"
+                >
+                  {expandedWhy ? '− Show less' : `+${selectedRole.why.length - 2} more`}
+                </button>
+              )}
             </div>
           </div>
-        ))}
-      </div>
 
-      <div className="text-center text-sm text-gray-400 italic">
-        These possibilities are based on limited information. We’ll validate assumptions before making any decisions.
+          <div className="bg-primary-50 border border-primary-200 rounded-2xl p-4">
+            <div className="text-xs font-bold uppercase tracking-widest text-primary-700 mb-2 flex items-center gap-2">
+              <i className="fas fa-lightbulb"></i> Assumes
+            </div>
+            <div className="space-y-2">
+              {(expandedAssumptions ? selectedRole.assumptions : selectedRole.assumptions.slice(0, 2)).map((a, i) => (
+                <div key={i} className="text-sm text-gray-800 flex items-start gap-2">
+                  <span className="text-primary-600 mt-0.5 flex-shrink-0">•</span>
+                  <span className="flex-1 min-w-0 break-words">{a}</span>
+                </div>
+              ))}
+              {selectedRole.assumptions.length > 2 && (
+                <button
+                  onClick={() => setExpandedAssumptions(!expandedAssumptions)}
+                  className="text-xs text-primary-600 hover:text-primary-800 font-medium cursor-pointer text-left"
+                >
+                  {expandedAssumptions ? '− Show less' : `+${selectedRole.assumptions.length - 2} more`}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4">
+            <div className="text-xs font-bold uppercase tracking-widest text-orange-700 mb-2 flex items-center gap-2">
+              <i className="fas fa-question-circle"></i> Unknowns
+            </div>
+            <div className="space-y-2">
+              {(expandedUncertainties ? selectedRole.uncertainties : selectedRole.uncertainties.slice(0, 2)).map((u, i) => (
+                <div key={i} className="text-sm text-gray-800 flex items-start gap-2">
+                  <span className="text-orange-600 mt-0.5 flex-shrink-0">•</span>
+                  <span className="flex-1 min-w-0 break-words">{u}</span>
+                </div>
+              ))}
+              {selectedRole.uncertainties.length > 2 && (
+                <button
+                  onClick={() => setExpandedUncertainties(!expandedUncertainties)}
+                  className="text-xs text-orange-600 hover:text-orange-800 font-medium cursor-pointer text-left"
+                >
+                  {expandedUncertainties ? '− Show less' : `+${selectedRole.uncertainties.length - 2} more`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-6 border-t border-warm-200 flex flex-col items-center gap-4">
+          <button
+            onClick={() => onSelectRole(selectedRole)}
+            className="w-full md:w-auto px-10 py-4 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-colors duration-200"
+          >
+            Explore this role <i className="fas fa-arrow-right ml-2 opacity-90"></i>
+          </button>
+
+          <div className="flex items-center gap-4 text-sm text-gray-500">
+            <button onClick={() => setSelectedRole(null)} className="hover:text-primary-600 transition-colors">
+              See other roles
+            </button>
+            <span className="text-gray-300">•</span>
+            <button onClick={() => onExit('unsure')} className="hover:text-gray-700 transition-colors">
+              Not sure
+            </button>
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-400 text-center">You can change your mind anytime.</p>
       </div>
     </StepLayout>
   );
 };
+
+export const ExplorationPage = React.memo(ExplorationPageInner);

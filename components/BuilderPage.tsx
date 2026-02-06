@@ -1,308 +1,475 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { UserContext, AIPreview } from '../types';
 import { generateAIUnderstanding } from '../geminiService';
 import { StepLayout } from './StepLayout';
+import { QuickScanCharts } from './QuickScanCharts';
+import { AnalysisProgressDisplay } from './AnalysisProgressDisplay';
+import { useLanguage } from '../LanguageContext';
+
+const ORIGIN_IDS = ['Content', 'Marketing', 'Operations', 'Data', 'Business', 'Mixed'];
 
 interface BuilderPageProps {
   onNext: (context: UserContext, preview: AIPreview) => void;
+  initialContext?: UserContext | null;
+  initialPreview?: AIPreview | null;
 }
 
-export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext }) => {
-  const [context, setContext] = useState<UserContext>({
-    origin: '',
-    considering: [],
-    frictionPoints: [],
-    frictionText: '',
+export const BuilderPage: React.FC<BuilderPageProps> = ({ onNext, initialContext, initialPreview }) => {
+  const { t } = useLanguage();
+  type BuilderStep = 'origin' | 'target_roles' | 'friction' | 'preview';
+
+  const [step, setStep] = useState<BuilderStep>(() => {
+    if (initialContext?.origin && initialPreview) return 'preview';
+    if (initialContext?.frictionPoints?.[0]) return 'friction';
+    if (initialContext?.considering?.length) return 'target_roles';
+    return 'origin';
   });
+
+  const [context, setContext] = useState<UserContext>(() => {
+    if (!initialContext) return { origin: '', considering: [], frictionPoints: [], frictionText: '' };
+    const origin = initialContext.origin;
+    const isCustom = origin && !ORIGIN_IDS.includes(origin);
+    return {
+      ...initialContext,
+      origin: isCustom ? 'Mixed' : origin || '',
+    };
+  });
+
+  const [customOrigin, setCustomOrigin] = useState(() => {
+    if (initialContext?.origin && !ORIGIN_IDS.includes(initialContext.origin)) {
+      return initialContext.origin;
+    }
+    return '';
+  });
+
+  const [cluster, setCluster] = useState<'product' | 'data' | 'business'>('product');
+
   const [loading, setLoading] = useState(false);
-  const [preview, setPreview] = useState<AIPreview | null>(null);
-  const [showCustomOrigin, setShowCustomOrigin] = useState(false);
-  const [showCustomDirection, setShowCustomDirection] = useState(false);
-  const [customDirection, setCustomDirection] = useState('');
-  
+  const [analysisStep, setAnalysisStep] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<AIPreview | null>(initialPreview || null);
+
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (preview && resultsRef.current) {
-      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [preview]);
-
-  const origins = [
-    'Content / Media / Communications',
-    'Marketing / Growth',
-    'Operations / Project coordination',
-    'Engineering / Technical role',
-    'Consulting / Business role'
+  const contextSteps = [
+    { id: 'parse', label: 'CONTEXT PARSING', progress: 25 },
+    { id: 'distill', label: 'CLARITY DISTILLATION', progress: 50 },
+    { id: 'assumption', label: 'ASSUMPTION EXTRACTION', progress: 75 },
+    { id: 'preview', label: 'QUICK SCAN GENERATION', progress: 95 },
   ];
 
-  const directions = [
-    'Product operations / Product roles',
-    'Digital marketing / Growth',
-    'Data / Analytics',
-    'Strategy / BizOps',
-    'Still exploring / not sure yet'
+  const contextConsoleLogs = [
+    { text: 'CONTEXT ENGINE: INITIALIZED' },
+    { text: `PARSING ORIGIN: ${context.origin || '...'}`, highlight: true },
+    { text: `EXTRACTING CONSIDERATIONS: ${context.considering.join(', ') || '...'}` },
+    { text: 'IDENTIFYING CLEAR vs UNCLEAR DIMENSIONS...' },
+    { text: 'GENERATING QUICK SCAN PREVIEW...' },
   ];
 
-  const frictionOptions = [
-    "I've done meaningful work, but job descriptions seem to value something else",
-    "I'm not sure which parts of my experience still count",
-    "I worry recruiters might see me as 'not a fit'",
-    "It feels like I'm starting over — but I'm not sure if that's true",
-    "None of these quite capture it"
+  const origins: { id: string; label: string; icon: string }[] = [
+    { id: 'Content', label: t.builder.content, icon: 'fa-pen-nib' },
+    { id: 'Marketing', label: t.builder.marketing, icon: 'fa-bullhorn' },
+    { id: 'Operations', label: t.builder.operations, icon: 'fa-gears' },
+    { id: 'Data', label: t.builder.data, icon: 'fa-chart-line' },
+    { id: 'Business', label: t.builder.business, icon: 'fa-briefcase' },
+    { id: 'Mixed', label: t.builder.mixedOther, icon: 'fa-layer-group' },
   ];
+
+  const roleClusters: Record<'product' | 'data' | 'business', { label: string; icon: string; roles: string[] }> = {
+    product: {
+      label: 'Product-ish',
+      icon: 'fa-cubes',
+      roles: ['Product Ops', 'Product', 'Program / Project', 'UX / Research'],
+    },
+    data: {
+      label: 'Data-ish',
+      icon: 'fa-chart-pie',
+      roles: ['Data / Analytics', 'Ops Analytics', 'RevOps / Sales Ops', 'Data Science'],
+    },
+    business: {
+      label: 'Business-ish',
+      icon: 'fa-compass',
+      roles: ['Strategy / BizOps', 'Operations', 'Customer / Partnerships', 'Consulting-ish'],
+    },
+  };
+
+  const frictionCards: { id: string; label: string; icon: string }[] = [
+    { id: 'Value mismatch', label: 'Value mismatch', icon: 'fa-scale-balanced' },
+    { id: 'What still counts', label: 'Not sure what still counts', icon: 'fa-layer-group' },
+    { id: 'Fear of not fitting', label: 'Fear of not fitting', icon: 'fa-user-xmark' },
+    { id: 'Feels like starting over', label: 'Feels like starting over', icon: 'fa-rotate-left' },
+    { id: 'Not sure yet', label: 'Not sure yet', icon: 'fa-question' },
+  ];
+
+  const selectedFriction = context.frictionPoints[0] || '';
 
   const handleToggleConsidering = (val: string) => {
-    setContext(prev => ({
+    setContext((prev) => ({
       ...prev,
-      considering: prev.considering.includes(val) 
-        ? prev.considering.filter(i => i !== val) 
-        : [...prev.considering.slice(-2), val] // Max 3
+      considering: prev.considering.includes(val)
+        ? prev.considering.filter((i) => i !== val)
+        : prev.considering.length >= 3
+          ? [...prev.considering.slice(1), val] // Max 3 (drop oldest)
+          : [...prev.considering, val],
     }));
   };
 
-  const handleToggleFriction = (val: string) => {
-    setContext(prev => ({
+  const handleSelectFriction = (val: string) => {
+    setContext((prev) => ({
       ...prev,
-      frictionPoints: prev.frictionPoints.includes(val)
-        ? prev.frictionPoints.filter(i => i !== val)
-        : [...prev.frictionPoints.slice(-2), val]
+      frictionPoints: val ? [val] : [],
     }));
   };
 
   const getFinalContext = (): UserContext => {
-    const finalConsidering = [...context.considering];
-    if (showCustomDirection && customDirection.trim()) {
-      finalConsidering.push(customDirection.trim());
-    }
+    const finalOrigin =
+      context.origin === 'Mixed' && customOrigin.trim() ? customOrigin.trim() : context.origin;
+
     return {
       ...context,
-      considering: finalConsidering
+      origin: finalOrigin,
     };
   };
 
   const handleGeneratePreview = async () => {
+    setError(null);
+
     const finalContext = getFinalContext();
-    if (!finalContext.origin || finalContext.considering.length === 0) return;
-    
+    if (!finalContext.origin || finalContext.considering.length === 0) {
+      setError('Please complete the previous steps: select your background and at least one target role.');
+      return;
+    }
+    if (!finalContext.frictionPoints[0]) {
+      setError('Please select your biggest friction point above.');
+      return;
+    }
+
     setLoading(true);
+    setAnalysisStep(0);
     try {
       const res = await generateAIUnderstanding(finalContext);
       setPreview(res);
+      setStep('preview');
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
     } catch (err) {
       console.error(err);
+      let msg = 'Analysis failed. Please try again.';
+
+      let errStr = '';
+      if (err instanceof Error) errStr = err.message;
+      else if (err && typeof err === 'object') {
+        const o = err as Record<string, unknown>;
+        errStr = [o.message, o.error, o.details, o.statusMessage]
+          .filter(Boolean)
+          .map((x) => (typeof x === 'string' ? x : JSON.stringify(x)))
+          .join(' ');
+      } else errStr = String(err ?? '');
+
+      if (/429|quota|RESOURCE_EXHAUSTED|limit.*0|exceeded/i.test(errStr)) {
+        msg = 'API 配额已用尽，请稍后再试';
+      } else if (/401|API key|invalid|unauthorized/i.test(errStr)) {
+        msg = 'Invalid API key. Check GEMINI_API_KEY in .env.local';
+      } else if (/model|not found|404/i.test(errStr)) {
+        msg = 'Model unavailable. The API may have changed.';
+      } else if (errStr && errStr.length < 200) {
+        msg = errStr;
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOriginClick = (opt: string) => {
-    setShowCustomOrigin(false);
-    setContext({ ...context, origin: opt });
-  };
+  useEffect(() => {
+    if (!loading) return;
+    const stepInterval = setInterval(() => {
+      setAnalysisStep((prev) => {
+        const next = prev + 1;
+        return next >= contextSteps.length ? prev : next;
+      });
+    }, 1200);
+    return () => clearInterval(stepInterval);
+  }, [loading]);
 
-  const handleCustomOriginClick = () => {
-    setShowCustomOrigin(true);
-    if (origins.includes(context.origin)) {
-      setContext({ ...context, origin: '' });
-    }
-  };
-
-  const isFormValid = () => {
-    const finalContext = getFinalContext();
-    return finalContext.origin && finalContext.considering.length > 0;
-  };
+  if (loading) {
+    const activeProgress = 40 + (analysisStep % 4) * 20;
+    return (
+      <StepLayout title="" subtitle="">
+        <AnalysisProgressDisplay
+          title="CONTEXT ENGINE"
+          subtitle="Generating your quick scan..."
+          steps={contextSteps}
+          currentStepIndex={analysisStep}
+          activeStepProgress={activeProgress}
+          consoleTitle="CONTEXT PROCESSING LAYER"
+          consoleLogs={contextConsoleLogs}
+          activeStatus="PROCESSING"
+        />
+      </StepLayout>
+    );
+  }
 
   return (
-    <StepLayout 
-      title="You're not starting over. You're transitioning."
-      subtitle="You don't need a polished story yet. We'll start with what's clear — and question the rest together."
+    <StepLayout
+      title={
+        step === 'origin'
+          ? t.builder.yourBackground
+          : step === 'target_roles'
+            ? 'Target roles'
+            : step === 'friction'
+              ? 'Biggest friction'
+              : 'Quick scan'
+      }
+      subtitle={
+        step === 'origin'
+          ? t.builder.pickOne
+          : step === 'target_roles'
+            ? 'Pick up to 3. You can change later.'
+            : step === 'friction'
+              ? 'Pick one. Optional: add your words.'
+              : 'We’ll label what’s clear and what’s uncertain.'
+      }
     >
-      <div className="space-y-12 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-        
-        <section>
-          <h2 className="text-xl font-semibold mb-4">1. What are you transitioning from?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-            {origins.map(opt => (
-              <button
-                key={opt}
-                onClick={() => handleOriginClick(opt)}
-                className={`text-left px-4 py-3 rounded-xl border transition-all ${
-                  !showCustomOrigin && context.origin === opt 
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-200' 
-                    : 'border-gray-200 hover:border-indigo-300'
-                }`}
-              >
-                {opt}
-              </button>
-            ))}
-            <button
-              onClick={handleCustomOriginClick}
-              className={`text-left px-4 py-3 rounded-xl border transition-all ${
-                showCustomOrigin 
-                  ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-200' 
-                  : 'border-gray-200 hover:border-indigo-300'
-              }`}
-            >
-              <i className="fas fa-edit mr-2 opacity-50"></i>
-              Other / Mixed background
-            </button>
-          </div>
-
-          {showCustomOrigin && (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-              <label className="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5 ml-1">Describe your background</label>
-              <input
-                type="text"
-                autoFocus
-                placeholder="e.g. Healthcare Professional, Teacher, Military Officer..."
-                className="w-full p-4 rounded-xl border-2 border-indigo-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50/50 outline-none transition-all shadow-sm"
-                value={context.origin}
-                onChange={(e) => setContext({ ...context, origin: e.target.value })}
-              />
-              <p className="mt-2 text-[11px] text-gray-400 italic ml-1">
-                Tell us exactly what you're doing now so we can identify specific transferable skills.
-              </p>
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+        {/* ORIGIN */}
+        {step === 'origin' && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {origins.map((opt) => {
+                const selected = context.origin === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => {
+                      setContext((prev) => ({ ...prev, origin: opt.id }));
+                      if (opt.id !== 'Mixed') setCustomOrigin('');
+                    }}
+                    className={[
+                      'rounded-2xl border p-4 text-left transition-all',
+                      'hover:border-primary-200 hover:bg-primary-50/30',
+                      selected ? 'border-primary-500 bg-primary-50/60 ring-1 ring-primary-200' : 'border-gray-200',
+                    ].join(' ')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          selected ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        <i className={`fas ${opt.icon}`}></i>
+                      </div>
+                      <div className={`font-bold ${selected ? 'text-primary-700' : 'text-gray-900'}`}>{opt.label}</div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          )}
-        </section>
 
-        <section>
-          <h2 className="text-xl font-semibold mb-2">2. What roles are you considering moving into?</h2>
-          <p className="text-sm text-gray-500 mb-4">(It’s okay if you’re still exploring. Select up to 3.)</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-            {directions.map(opt => (
+            {context.origin === 'Mixed' && (
+              <div className="mt-4">
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                  Tell us more (optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Design + Engineering, Sales + Marketing..."
+                  className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm"
+                  value={customOrigin}
+                  onChange={(e) => setCustomOrigin(e.target.value)}
+                />
+                <p className="mt-2 text-xs text-gray-400">Describe your background in a few words</p>
+              </div>
+            )}
+
+            <div className="pt-6 border-t border-gray-100 flex items-center justify-end">
               <button
-                key={opt}
-                onClick={() => handleToggleConsidering(opt)}
-                className={`text-left px-4 py-3 rounded-xl border transition-all ${
-                  context.considering.includes(opt)
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-200' 
-                    : 'border-gray-200 hover:border-indigo-300'
-                }`}
+                onClick={() => {
+                  const finalOrigin =
+                    context.origin === 'Mixed' && customOrigin.trim() ? customOrigin.trim() : context.origin;
+                  setContext((prev) => ({ ...prev, origin: finalOrigin }));
+                  setStep('target_roles');
+                }}
+                disabled={!context.origin}
+                className="px-8 py-3 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
-                {opt}
+                {t.builder.next} <i className="fas fa-arrow-right ml-2"></i>
               </button>
-            ))}
-            <button
-              onClick={() => setShowCustomDirection(!showCustomDirection)}
-              className={`text-left px-4 py-3 rounded-xl border transition-all ${
-                showCustomDirection 
-                  ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-200' 
-                  : 'border-gray-200 hover:border-indigo-300'
-              }`}
-            >
-              <i className="fas fa-plus mr-2 opacity-50"></i>
-              Something else...
-            </button>
-          </div>
-
-          {showCustomDirection && (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-              <label className="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5 ml-1">Enter a custom role or direction</label>
-              <input
-                type="text"
-                autoFocus
-                placeholder="e.g. Community Manager, Chief of Staff, UX Researcher..."
-                className="w-full p-4 rounded-xl border-2 border-indigo-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50/50 outline-none transition-all shadow-sm"
-                value={customDirection}
-                onChange={(e) => setCustomDirection(e.target.value)}
-              />
             </div>
-          )}
-        </section>
+          </div>
+        )}
 
-        <section>
-          <h2 className="text-xl font-semibold mb-2">3. Which part of your experience feels hardest to explain or reuse?</h2>
-          <p className="text-sm text-gray-500 mb-4">(Select what resonates most)</p>
-          <div className="space-y-3">
-            {frictionOptions.map(opt => (
-              <button
-                key={opt}
-                onClick={() => handleToggleFriction(opt)}
-                className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${
-                  context.frictionPoints.includes(opt)
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-200' 
-                    : 'border-gray-200 hover:border-indigo-300'
-                }`}
-              >
-                {opt}
+        {/* TARGET ROLES */}
+        {step === 'target_roles' && (
+          <div className="space-y-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div className="text-sm text-gray-500">
+                Selected: <span className="font-bold text-gray-900">{context.considering.length}</span>/3
+              </div>
+              <div className="flex gap-2">
+                {(['product', 'data', 'business'] as const).map((k) => {
+                  const selected = cluster === k;
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => setCluster(k)}
+                      className={[
+                        'px-4 py-2 rounded-full text-sm font-bold border transition-all',
+                        selected
+                          ? 'bg-gray-900 text-white border-gray-900'
+                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300',
+                      ].join(' ')}
+                    >
+                      <i className={`fas ${roleClusters[k].icon} mr-2`}></i>
+                      {roleClusters[k].label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {roleClusters[cluster].roles.map((role) => {
+                const selected = context.considering.includes(role);
+                return (
+                  <button
+                    key={role}
+                    onClick={() => handleToggleConsidering(role)}
+                    className={[
+                      'rounded-2xl border p-4 text-left transition-all',
+                      'hover:border-primary-200 hover:bg-primary-50/30',
+                      selected ? 'border-primary-500 bg-primary-50/60 ring-1 ring-primary-200' : 'border-gray-200',
+                    ].join(' ')}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className={`font-bold ${selected ? 'text-primary-700' : 'text-gray-900'}`}>{role}</div>
+                      <div
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          selected ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-400'
+                        }`}
+                      >
+                        <i className={`fas ${selected ? 'fa-check' : 'fa-plus'}`}></i>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
+              <button onClick={() => setStep('origin')} className="px-5 py-2 text-gray-600 hover:text-gray-900 font-bold">
+                <i className="fas fa-arrow-left mr-2"></i> Back
               </button>
-            ))}
-            {(context.frictionPoints.includes("None of these quite capture it") || context.frictionText) && (
+              <button
+                onClick={() => setStep('friction')}
+                disabled={context.considering.length === 0}
+                className="px-8 py-3 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              >
+                {t.builder.next} <i className="fas fa-arrow-right ml-2"></i>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* FRICTION */}
+        {step === 'friction' && (
+          <div className="space-y-8" ref={resultsRef}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {frictionCards.map((card) => {
+                const selected = selectedFriction === card.id;
+                return (
+                  <button
+                    key={card.id}
+                    onClick={() => handleSelectFriction(card.id)}
+                    className={[
+                      'rounded-2xl border p-4 text-left transition-all',
+                      'hover:border-primary-200 hover:bg-primary-50/30',
+                      selected ? 'border-primary-500 bg-primary-50/60 ring-1 ring-primary-200' : 'border-gray-200',
+                    ].join(' ')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          selected ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        <i className={`fas ${card.icon}`}></i>
+                      </div>
+                      <div className={`font-bold ${selected ? 'text-primary-700' : 'text-gray-900'}`}>{card.label}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Optional note</label>
               <textarea
-                placeholder="If you want to add a thought in your own words (optional)..."
-                className="w-full mt-2 p-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                placeholder="Add a quick detail (optional)…"
+                className="w-full p-4 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm"
                 rows={3}
                 value={context.frictionText}
-                onChange={(e) => setContext({...context, frictionText: e.target.value})}
+                onChange={(e) => setContext((prev) => ({ ...prev, frictionText: e.target.value }))}
               />
-            )}
-          </div>
-        </section>
+              <p className="mt-2 text-xs text-gray-400">Short is fine. We’ll refine later.</p>
+            </div>
 
-        <div className="pt-6 border-t border-gray-100 flex flex-col items-center">
-          <button
-            onClick={handleGeneratePreview}
-            disabled={loading || !isFormValid()}
-            className="px-8 py-3 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-6 shadow-md"
-          >
-            {loading ? <i className="fas fa-spinner fa-spin mr-2"></i> : null}
-            Analyze my context
-          </button>
-
-          {preview && (
-            <div ref={resultsRef} className="w-full bg-gray-50 rounded-2xl p-6 border border-gray-200 scroll-mt-24">
-              <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
-                <i className="fas fa-brain text-indigo-500 mr-2"></i>
-                Here’s how your transition looks so far
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-3">
-                  <h4 className="text-sm font-bold text-green-700 uppercase tracking-wider flex items-center">
-                    <i className="fas fa-check-circle mr-2"></i> What's Clear
-                  </h4>
-                  <ul className="text-sm text-gray-700 space-y-2">
-                    {preview.clear.map((item, i) => <li key={i} className="flex items-start"><span className="mr-2">•</span>{item}</li>)}
-                  </ul>
-                </div>
-                <div className="space-y-3">
-                  <h4 className="text-sm font-bold text-indigo-700 uppercase tracking-wider flex items-center">
-                    <i className="fas fa-lightbulb mr-2"></i> Transferable Skills
-                  </h4>
-                  <ul className="text-sm text-gray-700 space-y-2">
-                    {preview.assumptions.map((item, i) => <li key={i} className="flex items-start"><span className="mr-2">•</span>{item}</li>)}
-                  </ul>
-                </div>
-                <div className="space-y-3">
-                  <h4 className="text-sm font-bold text-orange-700 uppercase tracking-wider flex items-center">
-                    <i className="fas fa-question-circle mr-2"></i> Still Unclear
-                  </h4>
-                  <ul className="text-sm text-gray-700 space-y-2">
-                    {preview.unclear.map((item, i) => <li key={i} className="flex items-start"><span className="mr-2">•</span>{item}</li>)}
-                  </ul>
+            {error && (
+              <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-2 flex-wrap">
+                <i className="fas fa-exclamation-circle mt-0.5 flex-shrink-0"></i>
+                <span className="flex-1 min-w-0">{error}</span>
+                <div className="flex items-center gap-2 ml-auto">
+                  {(/配额|quota|exceeded/i.test(error)) && (
+                    <button
+                      onClick={() => { setError(null); handleGeneratePreview(); }}
+                      className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+                    >
+                      {t.builder.retry}
+                    </button>
+                  )}
+                  <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 p-1" aria-label="Dismiss">
+                    <i className="fas fa-times"></i>
+                  </button>
                 </div>
               </div>
-              
-              <p className="mt-6 text-xs text-gray-400 italic">
-                These are starting assumptions — you’ll be able to correct or refine them later.
-              </p>
-            </div>
-          )}
-        </div>
+            )}
 
-        {preview && (
-          <div className="pt-8 flex flex-col items-center border-t border-gray-100">
-            <button
-              onClick={() => onNext(getFinalContext(), preview)}
-              className="px-10 py-4 bg-gray-900 text-white rounded-full font-bold hover:bg-black transition-all transform hover:scale-105 shadow-xl"
-            >
-              Let’s stress-test this transition
-              <i className="fas fa-arrow-right ml-2"></i>
-            </button>
-            <p className="mt-3 text-sm text-gray-500">No decisions yet — just exploration.</p>
+            <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
+              <button onClick={() => setStep('target_roles')} className="px-5 py-2 text-gray-600 hover:text-gray-900 font-bold">
+                <i className="fas fa-arrow-left mr-2"></i> Back
+              </button>
+              <button
+                onClick={handleGeneratePreview}
+                disabled={loading || !context.origin || context.considering.length === 0 || !selectedFriction}
+                className="px-8 py-3 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              >
+                <i className="fas fa-wand-magic-sparkles mr-2"></i>
+                Analyze
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* PREVIEW */}
+        {step === 'preview' && preview && (
+          <div className="space-y-8">
+            <QuickScanCharts preview={preview} />
+
+            <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
+              <button onClick={() => setStep('friction')} className="px-5 py-2 text-gray-600 hover:text-gray-900 font-bold">
+                <i className="fas fa-arrow-left mr-2"></i> Back
+              </button>
+              <button
+                onClick={() => onNext(getFinalContext(), preview)}
+                className="px-10 py-4 bg-gray-900 text-white rounded-full font-bold hover:bg-black transition-all shadow-xl"
+              >
+                Continue <i className="fas fa-arrow-right ml-2"></i>
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-400 text-center">Reassurance: you can change any selection later.</p>
           </div>
         )}
       </div>
